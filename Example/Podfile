@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'Cloudability_Example' do
+  pod 'Cloudability', :path => '../'
+
+  target 'Cloudability_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
