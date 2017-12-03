@@ -1,0 +1,22 @@
+{
+  "name": "Cloudability",
+  "version": "0.1.0",
+  "summary": "A short description of Cloudability.",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/int123c/Cloudability",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "int123c": "int123c@gmail.com"
+  },
+  "source": {
+    "git": "https://github.com/int123c/Cloudability.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source_files": "Cloudability/Classes/**/*"
+}

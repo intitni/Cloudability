@@ -1,0 +1,6 @@
+framework module Pods_Cloudability_Tests {
+  umbrella header "Pods-Cloudability_Tests-umbrella.h"
+
+  export *
+  module * { export * }
+}

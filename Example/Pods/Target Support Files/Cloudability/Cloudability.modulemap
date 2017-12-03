@@ -1,0 +1,6 @@
+framework module Cloudability {
+  umbrella header "Cloudability-umbrella.h"
+
+  export *
+  module * { export * }
+}
