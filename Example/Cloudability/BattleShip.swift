@@ -11,5 +11,5 @@ import RealmSwift
 
 class BattleShip: Object {
     
-    var mobileArmors: List<MobileArmor>
+    var mobileArmors = List<MobileArmor>()
 }

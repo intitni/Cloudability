@@ -20,6 +20,26 @@ enum CloudError: Error {
 }
 
 final class Cloud {
+    enum Defaults {
+        static var changeToken: Data? {
+            get {
+                return Data()
+            }
+            set {
+                
+            }
+        }
+        
+        static var createdCustomZone: Bool {
+            get {
+                return false
+            }
+            set {
+                
+            }
+        }
+    }
+    
     private(set) var syncing = false
     var cancelled = false
     
@@ -37,14 +57,14 @@ final class Cloud {
     
     var persistedChangeToken: CKServerChangeToken? {
         get {
-            if let tokenData = Defaults[DefaultsKeys.changeToken] {
+            if let tokenData = Defaults.changeToken {
                 return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
             }
             return nil
         }
         set {
             if let token = newValue {
-                Defaults[DefaultsKeys.changeToken] = NSKeyedArchiver.archivedData(withRootObject: token)
+                Defaults.changeToken = NSKeyedArchiver.archivedData(withRootObject: token)
             }
         }
     }
@@ -57,7 +77,7 @@ extension Cloud {
         return Promise { fullfill, reject in
             guard !syncing else { throw CloudError.AlreadySyncing }
             
-            dPrint("Cloud >> Start syncronization.")
+            print("Cloud >> Start syncronization.")
             syncing = true
             
             Promise(value: ()).then(on: dispatchQueue) {
@@ -100,19 +120,19 @@ extension Cloud {
             Promise(value: ()).then(on: dispatchQueue) {
                 self.databases.private.fetch(withRecordZoneID: self.zoneID)
             }.then { recordZone -> Void in
-                dPrint("Cloud >>>> Zone already created, will use it directly.")
+                print("Cloud >>>> Zone already created, will use it directly.")
                 self.customZone = recordZone
-                Defaults[DefaultsKeys.createdCustomZone] = true
+                Defaults.createdCustomZone = true
                 fullfill(())
             }.catch { _ in // sadly zone was not created
-                dPrint("Cloud >>>> Zone was not created, will create it now.")
+                print("Cloud >>>> Zone was not created, will create it now.")
                 firstly {
                     self.databases.private.save(CKRecordZone(zoneID: self.zoneID))
                 }.then { recordZone -> Void in
-                    dPrint("Cloud >>>> Zone was successfully created.")
+                    print("Cloud >>>> Zone was successfully created.")
                     self.customZone = recordZone
                 }.catch { error in
-                    dPrint("Cloud >>>> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                    print("Cloud >>>> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
                     reject(error)
                 }
             }
@@ -134,37 +154,37 @@ extension Cloud {
             Promise(value: ()).then(on: dispatchQueue) {
                 () -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: CKServerChangeToken?)> in
                 
-                dPrint("Cloud >> Fetch changes from private database.")
+                print("Cloud >> Fetch changes from private database.")
                 
                 return self.fetchChanges(from: self.databases.private)
                 
             }.then { (modification, deletion, token) -> ([CKRecord], [CKRecordID]) in
                 
-                dPrint("Cloud >> Send data to changeManager to save to disk.")
+                print("Cloud >> Send data to changeManager to save to disk.")
                 
                 try changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
                 self.persistedChangeToken = token
                 
-                dPrint("Cloud >> Change saved, fetch upload data from changeManager.")
+                print("Cloud >> Change saved, fetch upload data from changeManager.")
                 
                 let uploads = try changeManager.generateUploads()
                 return (uploads.modification, uploads.deletion)
                 
             }.then { (modification, deletion) -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
                 
-                dPrint("Cloud >> Push local changes to cloud.")
+                print("Cloud >> Push local changes to cloud.")
                 
                 return self.pushChanges(to: self.databases.private, saving: modification, deleting: deletion)
                 
             }.then { saved, deleted -> Void in
                 
-                dPrint("Cloud >> Upload finished.")
+                print("Cloud >> Upload finished.")
                 
                 try changeManager.finishUploads(saved: saved, deleted: deleted)
                 
             }.always {
                 
-                dPrint("Cloud >> Sync finished.")
+                print("Cloud >> Sync finished.")
                 
                 self.finish()
                 
@@ -202,7 +222,7 @@ extension Cloud {
             fetchOperation.recordZoneFetchCompletionBlock = { [unowned self] (zoneId, changeToken, _, _, error) in
                 if let error = error {
                     reject(error)
-                    dPrint("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
+                    print("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
                     return
                 }
                 lastChangeToken = changeToken
@@ -211,7 +231,7 @@ extension Cloud {
             fetchOperation.fetchRecordZoneChangesCompletionBlock = { error in
                 if let error = error {
                     reject(error)
-                    dPrint("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
+                    print("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
                     return
                 }
                 
@@ -232,7 +252,7 @@ extension Cloud {
             operation.modifyRecordsCompletionBlock = { saved, deleted, error in
                 if let error = (error as? CKError),
                     case .partialFailure = error.code {
-                        dPrint("Cloud >>>> Only apart of uploads are successfully applied to cloud.")
+                        print("Cloud >>>> Only apart of uploads are successfully applied to cloud.")
                 }
                 fullfill((saved, deleted))
             }
