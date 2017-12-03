@@ -8,8 +8,11 @@
 
 import Foundation
 import RealmSwift
+import Cloudability
 
-class MobileSuit: Object {
+class MobileSuit: Object, Cloudable {
     @objc dynamic var type = ""
     let pilots = List<Pilot>()
+    
+    @objc dynamic var isDeleted = false
 }

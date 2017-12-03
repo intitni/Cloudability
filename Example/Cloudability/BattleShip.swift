@@ -8,10 +8,13 @@
 
 import Foundation
 import RealmSwift
+import Cloudability
 
-class BattleShip: Object {
+class BattleShip: Object, Cloudable {
     var mobileSuits = List<MobileSuit>()
     var mobileArmors = List<MobileArmor>()
     @objc dynamic var name = ""
     @objc dynamic var msCatapults = 1
+    
+    @objc dynamic var isDeleted = false
 }

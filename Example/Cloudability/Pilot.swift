@@ -8,8 +8,11 @@
 
 import Foundation
 import RealmSwift
+import Cloudability
 
-class Pilot: Object {
+class Pilot: Object, Cloudable {
     @objc dynamic var name = ""
     @objc dynamic var age = 18
+    
+    @objc dynamic var isDeleted = false
 }

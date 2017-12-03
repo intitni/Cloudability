@@ -9,9 +9,9 @@ import Foundation
 import RealmSwift
 import CloudKit
 
-typealias CloudableObject = Object & Cloudable
+public typealias CloudableObject = Object & Cloudable
 
-protocol Cloudable: class {
+public protocol Cloudable: class {
     /// Defaultly the id of an object.
     var recordID: CKRecordID { get }
     /// Defaultly the `className()`.
@@ -30,15 +30,15 @@ protocol Cloudable: class {
 }
 
 extension Cloudable where Self: Object  {
-    static var recordType: String {
+    public static var recordType: String {
         return className()
     }
     
-    var recordType: String {
+    public var recordType: String {
         return Self.recordType
     }
     
-    static var recordZoneID: CKRecordZoneID {
+    public static var recordZoneID: CKRecordZoneID {
         return CKRecordZoneID(zoneName: "\(recordType)sZone", ownerName: CKCurrentUserDefaultName)
     }
     
@@ -54,7 +54,7 @@ extension Cloudable where Self: Object  {
         return primaryKeyProperty.name
     }
     
-    var recordID: CKRecordID {
+    public var recordID: CKRecordID {
         let propertyName = primaryKeyPropertyName
         if let string = self[propertyName] as? String {
             return CKRecordID(recordName: string, zoneID: Self.recordZoneID)
@@ -63,7 +63,7 @@ extension Cloudable where Self: Object  {
         fatalError("The type of primary for object of type '\(recordType)' should be `String`. Hint: Check implementation of the Object.")
     }
     
-    var pkProperty: String {
+    public var pkProperty: String {
         get {
             let propertyName = primaryKeyPropertyName
             guard let string = self[propertyName] as? String else {
