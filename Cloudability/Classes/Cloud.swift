@@ -11,31 +11,41 @@ import CloudKit
 import PromiseKit
 import RealmSwift
 
-enum CloudError: Error {
+public enum CloudError: Error {
     case AlreadySyncing
     case ICloudAccountNotAvailable
 }
 
-final class Cloud {
-    enum Defaults {
-        static var changeToken: Data? {
+public final class Cloud {
+    fileprivate enum Defaults {
+        static let changeTokenKey = "CloudabilityChangeToken"
+        static let createdCustomZoneKey = "CloudabilityCreatedCustomZone"
+        
+        static var changeToken: CKServerChangeToken? {
             get {
-                return Data()
+                if let tokenData = UserDefaults.standard.data(forKey: changeTokenKey) {
+                    return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
+                }
+                return nil
             }
             set {
-                
+                if let token = newValue {
+                    UserDefaults.standard.set(NSKeyedArchiver.archivedData(withRootObject: token), forKey: changeTokenKey)
+                }
             }
         }
         
         static var createdCustomZone: Bool {
-            get {
-                return false
-            }
-            set {
-                
-            }
+            get { return UserDefaults.standard.bool(forKey: createdCustomZoneKey) }
+            set { UserDefaults.standard.set(newValue, forKey: createdCustomZoneKey) }
         }
     }
+    
+    internal lazy var changeManager: ChangeManager = {
+        let c = ChangeManager()
+        c.cloud = self
+        return c
+    }()
     
     private(set) var syncing = false
     var cancelled = false
@@ -46,31 +56,24 @@ final class Cloud {
     let dispatchQueue = DispatchQueue.global(qos: .userInitiated)
     private(set) var customZone: CKRecordZone?
     
-    fileprivate init(containerIdentifier: String, recordZoneID: CKRecordZoneID) {
+    public init(containerIdentifier: String, recordZoneID: CKRecordZoneID) {
         container = CKContainer(identifier: containerIdentifier)
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
         zoneID = recordZoneID
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
     }
     
-    var persistedChangeToken: CKServerChangeToken? {
-        get {
-            if let tokenData = Defaults.changeToken {
-                return NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
-            }
-            return nil
-        }
-        set {
-            if let token = newValue {
-                Defaults.changeToken = NSKeyedArchiver.archivedData(withRootObject: token)
-            }
-        }
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
 // MARK: - Public
 
 extension Cloud {
-    func syncronize() -> Promise<Void> {
+    /// Start syncronization
+    public func syncronize() -> Promise<Void> {
         return Promise { fullfill, reject in
             guard !syncing else { throw CloudError.AlreadySyncing }
             
@@ -141,13 +144,24 @@ extension Cloud {
             
         }
     }
+    
+    @objc func cleanUp() {
+        let deletedSyncedEntities = r.syncedEntities.filter("isDeleted == true")
+        let appliedPendingRelationships = r.pendingRelationships.filter("isApplied == true")
+        
+        try? r.write { realm in
+            realm.delete(deletedSyncedEntities)
+            realm.delete(appliedPendingRelationships)
+        }
+        r.deleteSoftDeletedObjects()
+    }
 }
 
 // MARK: - Private
 
 extension Cloud {
     private func _syncronize() -> Promise<Void> {
-        return Promise<Void> { fullfill, reject in
+        return Promise<Void> { [unowned self] fullfill, reject in
             Promise(value: ()).then(on: dispatchQueue) {
                 () -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: CKServerChangeToken?)> in
                 
@@ -159,12 +173,12 @@ extension Cloud {
                 
                 print("Cloud >> Send data to changeManager to save to disk.")
                 
-                try changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
-                self.persistedChangeToken = token
+                try self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
+                Defaults.changeToken = token
                 
                 print("Cloud >> Change saved, fetch upload data from changeManager.")
                 
-                let uploads = try changeManager.generateUploads()
+                let uploads = try self.changeManager.generateUploads()
                 return (uploads.modification, uploads.deletion)
                 
             }.then { (modification, deletion) -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
@@ -177,7 +191,7 @@ extension Cloud {
                 
                 print("Cloud >> Upload finished.")
                 
-                try changeManager.finishUploads(saved: saved, deleted: deleted)
+                try self.changeManager.finishUploads(saved: saved, deleted: deleted)
                 
             }.always {
                 
@@ -201,7 +215,7 @@ extension Cloud {
             var lastChangeToken: CKServerChangeToken?
             
             let option = CKFetchRecordZoneChangesOptions()
-            option.previousServerChangeToken = persistedChangeToken
+            option.previousServerChangeToken = Defaults.changeToken
             let fetchOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], optionsByRecordZoneID: [zoneID: option])
             
             fetchOperation.recordChangedBlock = { record in
@@ -216,10 +230,10 @@ extension Cloud {
                 lastChangeToken = token
             }
             
-            fetchOperation.recordZoneFetchCompletionBlock = { [unowned self] (zoneId, changeToken, _, _, error) in
+            fetchOperation.recordZoneFetchCompletionBlock = { (zoneId, changeToken, _, _, error) in
                 if let error = error {
                     reject(error)
-                    print("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
+                    print("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
                     return
                 }
                 lastChangeToken = changeToken
@@ -228,7 +242,7 @@ extension Cloud {
             fetchOperation.fetchRecordZoneChangesCompletionBlock = { error in
                 if let error = error {
                     reject(error)
-                    print("Cloud >>>> Error fetching zone changes for \(String(describing: self.persistedChangeToken)) database.")
+                    print("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
                     return
                 }
                 
@@ -261,6 +275,8 @@ extension Cloud {
     private func finish() {
         syncing = false
     }
+    
+    
 }
 
 

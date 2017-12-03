@@ -12,10 +12,9 @@ import RealmSwift
 typealias ID = String
 
 /// Gloabal realm in main thread.
-let realm = try! Realm()
-let store = ItemStore()
+let r = R()
 
-final class ItemStore {
+final class R {
     let configuration: Realm.Configuration
     
     /// A new `Realm` reference is generated on every get, to avoid a realm object to be used in different thread.
@@ -40,6 +39,10 @@ final class ItemStore {
     
     init(configuration: Realm.Configuration = .defaultConfiguration) {
         self.configuration = configuration
+    }
+    
+    func deleteSoftDeletedObjects() {
+        
     }
 }
 

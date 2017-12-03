@@ -28,7 +28,7 @@
 		0DF2D16A21C14E295CC08BCB938958BD /* binding_callback_thread_observer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 362D193519DA34ECD002F931AA3269AA /* binding_callback_thread_observer.cpp */; settings = {COMPILER_FLAGS = "-DREALM_HAVE_CONFIG -DREALM_COCOA_VERSION='@\"3.0.2\"' -D__ASSERTMACROS__ -DREALM_ENABLE_SYNC"; }; };
 		0F82B67B1A49EB2B724B9FDD0635E5FC /* results.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 01BE034D29844E8D7777790B2665543B /* results.cpp */; settings = {COMPILER_FLAGS = "-DREALM_HAVE_CONFIG -DREALM_COCOA_VERSION='@\"3.0.2\"' -D__ASSERTMACROS__ -DREALM_ENABLE_SYNC"; }; };
 		0F98342CCFBCA44D8F9552C214246682 /* RLMObjectBase_Dynamic.h in Copy . Public Headers */ = {isa = PBXBuildFile; fileRef = DDBF008ACC7D1C85B8DFAF69A94DF0AB /* RLMObjectBase_Dynamic.h */; };
-		1348F8BB1FD4007D0019A524 /* ItemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8BA1FD4007D0019A524 /* ItemStore.swift */; };
+		1348F8BB1FD4007D0019A524 /* R.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8BA1FD4007D0019A524 /* R.swift */; };
 		1348F8BD1FD402010019A524 /* Cloudable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8BC1FD402010019A524 /* Cloudable.swift */; };
 		13859ED58069502779D43FE5FC5A365B /* RLMRealm_Dynamic.h in Headers */ = {isa = PBXBuildFile; fileRef = 8E05CB81B626F65CE8BACFE46E4C710E /* RLMRealm_Dynamic.h */; };
 		1596D368936F1E6ED8FF63B99A874A91 /* Cloud.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF95E1B047262167A2076C0FB2578F4 /* Cloud.swift */; };
@@ -402,7 +402,7 @@
 		107BD90CE0A8BFC44C0B180F56589BE5 /* Cloudability.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Cloudability.xcconfig; sourceTree = "<group>"; };
 		1292017B12FB094DA85D34139D1790B5 /* sync_permission.cpp */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.cpp; name = sync_permission.cpp; path = Realm/ObjectStore/src/sync/sync_permission.cpp; sourceTree = "<group>"; };
 		12E539B4B2CEA3BCE95FEC8B4B207BCD /* Schema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Schema.swift; path = RealmSwift/Schema.swift; sourceTree = "<group>"; };
-		1348F8BA1FD4007D0019A524 /* ItemStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ItemStore.swift; path = Cloudability/Classes/ItemStore.swift; sourceTree = "<group>"; };
+		1348F8BA1FD4007D0019A524 /* R.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = R.swift; path = Cloudability/Classes/R.swift; sourceTree = "<group>"; };
 		1348F8BC1FD402010019A524 /* Cloudable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Cloudable.swift; path = Cloudability/Classes/Cloudable.swift; sourceTree = "<group>"; };
 		13C7EE029449FF6B9473E5C62F352D57 /* Pods-Cloudability_Example-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-Cloudability_Example-resources.sh"; sourceTree = "<group>"; };
 		13F908DEFEE7576ABE467B5648E23015 /* ObjectiveCSupport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ObjectiveCSupport.swift; path = RealmSwift/ObjectiveCSupport.swift; sourceTree = "<group>"; };
@@ -1050,7 +1050,7 @@
 				BF2C68EA6C2F7960F237928217FA8080 /* ObjectConverter.swift */,
 				AE8AF4F66874C4783AA4ED28057576E1 /* PendingRelationship.swift */,
 				4EF095FCA2C13D3717A1F0B2E950303B /* SyncedEntity.swift */,
-				1348F8BA1FD4007D0019A524 /* ItemStore.swift */,
+				1348F8BA1FD4007D0019A524 /* R.swift */,
 				D3D21A0D477BEF7F3309B20B67AB20EC /* Support Files */,
 			);
 			name = Cloudability;
@@ -1404,7 +1404,7 @@
 				9AB4ABE08E37E36834EE0FDCA05B48F1 /* ObjectConverter.swift in Sources */,
 				38256943D292A6BEFED368C656F48C09 /* PendingRelationship.swift in Sources */,
 				1348F8BD1FD402010019A524 /* Cloudable.swift in Sources */,
-				1348F8BB1FD4007D0019A524 /* ItemStore.swift in Sources */,
+				1348F8BB1FD4007D0019A524 /* R.swift in Sources */,
 				B919C4331406BE2A44FA0BA58D1895CF /* SyncedEntity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

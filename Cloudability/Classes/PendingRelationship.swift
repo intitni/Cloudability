@@ -22,7 +22,9 @@ class PendingRelationship: Object {
     @objc dynamic var fromIdentifier: String! { didSet { setID() } }
     @objc dynamic var propertyName: String! { didSet { setID() } }
     @objc dynamic var toType: String!
-    var targetIdentifiers: List<String> = List<String>()
+    var targetIdentifiers = List<String>()
+    
+    @objc dynamic var isApplied = false
     
     override class func primaryKey() -> String? { return "id" }
     
@@ -32,9 +34,7 @@ class PendingRelationship: Object {
     }
 }
 
-// MARK: - Item Store
-
-extension ItemStore {
+extension R {
     func applyPendingRelationships() {
         for r in pendingRelationships {
             do {
@@ -58,7 +58,7 @@ extension ItemStore {
         case dataCorrupted
     }
     
-    private var pendingRelationships: Results<PendingRelationship> {
+    var pendingRelationships: Results<PendingRelationship> {
         return realm.objects(PendingRelationship.self)
     }
     

@@ -21,6 +21,8 @@ class SyncedEntity: Object {
     @objc dynamic var changedKeys: String?
     @objc dynamic var modifiedTime: Date?
     
+    @objc dynamic var isDeleted = false
+    
     convenience init(type: String, identifier: String, state: Int) {
         self.init()
         
@@ -61,7 +63,7 @@ class SyncedEntity: Object {
     }
 }
 
-extension ItemStore {
+extension R {
     var syncedEntities: Results<SyncedEntity> {
         return realm.objects(SyncedEntity.self)
     }
@@ -88,6 +90,7 @@ extension ItemStore {
         return syncedEntities
             .filter(NSPredicate(format: "state != \(SyncedEntity.ChangeState.synced.rawValue)"))
     }
+    
 }
 
 

@@ -25,6 +25,8 @@ public protocol Cloudable: class {
     var isDeleted: Bool { get }
     
     var pkProperty: String { get set }
+    
+    func validate() -> Bool
 }
 
 extension Cloudable where Self: Object  {
@@ -73,5 +75,24 @@ extension Cloudable where Self: Object  {
             }
             self[propertyName] = id
         }
+    }
+    
+    public func validate() -> Bool {
+        guard let sharedSchema = Self.sharedSchema() else {
+            print("No schema found for object of type '\(recordType)'. Hint: Check implementation of the Object.")
+            return false
+        }
+        
+        guard let primaryKeyProperty = sharedSchema.primaryKeyProperty else {
+            print("No primary key fround for object of type '\(recordType)'. Hint: Check implementation of the Object.")
+            return false
+        }
+        
+        guard let _ = self[primaryKeyProperty.name] as? String else {
+            print("The type of primary for object of type '\(recordType)' should be `String`. Hint: Check implementation of the Object.")
+            return false
+        }
+        
+        return true
     }
 }

@@ -11,9 +11,9 @@ import CloudKit
 import PromiseKit
 import RealmSwift
 
-let changeManager = ChangeManager()
-
 class ChangeManager {
+    weak var cloud: Cloud!
+    
     var collectionInsertionObservations = [NotificationToken]()
     var objectObservations = [ID: NotificationToken]()
     
@@ -30,7 +30,7 @@ class ChangeManager {
         let record: CKRecord
     }
     
-    fileprivate init() {
+    init() {
         setupObservations()
     }
     
@@ -42,24 +42,24 @@ class ChangeManager {
 
 extension ChangeManager {
     func setupSyncedEntities() {
-        guard store.syncedEntities.count <= 0 else {
+        guard r.syncedEntities.count <= 0 else {
             print("ChangeManager >> Synced entities already setup.")
             return
         }
         
         print("ChangeManager >> Setting up synced entities.")
         
-        for schema in store.realm.schema.objectSchema {
+        for schema in r.realm.schema.objectSchema {
             let objectClass = realmObjectType(forName: schema.className)
             guard objectClass is CloudableObject.Type else { continue }
             let primaryKey = objectClass.primaryKey()!
-            let results = store.realm.objects(objectClass)
+            let results = r.realm.objects(objectClass)
             
             let syncedEntities = results.map {
                 SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
             }
             
-            try! store.write { realm in
+            try! r.write { realm in
                 realm.add(syncedEntities)
             }
         }
@@ -68,21 +68,21 @@ extension ChangeManager {
     }
     
     func detachSyncedEntities() throws {
-        try store.write { realm in
-            _ = store.syncedEntities.map(realm.delete)
+        try r.write { realm in
+            _ = r.syncedEntities.map(realm.delete)
         }
     }
     
     func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) throws {
         let m: [Modification] = modification.map {
-                return Modification(syncedEntity: store.syncedEntity(withIdentifier: $0.recordID.recordName),
+                return Modification(syncedEntity: r.syncedEntity(withIdentifier: $0.recordID.recordName),
                                     record: $0)
             }
     
         let d: [Deletion] = deletion
             .flatMap { recordID in
                 let identifier = recordID.recordName
-                guard let se = store.syncedEntity(withIdentifier: identifier) else { return nil }
+                guard let se = r.syncedEntity(withIdentifier: identifier) else { return nil }
                 return Deletion(syncedEntity: SyncedEntity(value: se))
             }
         
@@ -90,18 +90,18 @@ extension ChangeManager {
     }
     
     func generateUploads() throws -> (modification: [CKRecord], deletion: [CKRecordID]) {
-        let uploadingModificationSyncedEntities = Array(store.syncedEntities(of: [.inserted, .changed]))
-        let uploadingDeletionSyncedEntities = Array(store.syncedEntities(of: .deleted))
+        let uploadingModificationSyncedEntities = Array(r.syncedEntities(of: [.inserted, .changed]))
+        let uploadingDeletionSyncedEntities = Array(r.syncedEntities(of: .deleted))
         
         let objectConverter = ObjectConverter()
         
         let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
-            let object = realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
+            let object = r.realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
             return (object as? CloudableObject).map(objectConverter.convert)
         }
         
         let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
-            return CKRecordID(recordName: $0.identifier, zoneID: zoneID)
+            return CKRecordID(recordName: $0.identifier, zoneID: cloud.zoneID)
         }
         
         return (modification, deletion)
@@ -111,14 +111,14 @@ extension ChangeManager {
         let savedEntities: [SyncedEntity] = saved?
             .flatMap { record in
                 let id = record.recordID.recordName
-                return store.syncedEntity(withIdentifier: id)
+                return r.syncedEntity(withIdentifier: id)
             } ?? []
         let deletedEntites: [SyncedEntity] = deleted?
             .flatMap { recordID in
-                return store.syncedEntity(withIdentifier: recordID.recordName)
+                return r.syncedEntity(withIdentifier: recordID.recordName)
             } ?? []
         
-        try store.write { realm in
+        try r.write { realm in
             for entity in savedEntities {
                 entity.changeState = .synced
                 realm.add(entity, update: true)
@@ -133,11 +133,11 @@ extension ChangeManager {
 
 extension ChangeManager {
     private func setupObservations() {
-        for schema in store.realm.schema.objectSchema {
+        for schema in r.realm.schema.objectSchema {
             let objectClass = realmObjectType(forName: schema.className)
             guard objectClass is CloudableObject.Type else { continue }
             let primaryKey = objectClass.primaryKey()!
-            let results = store.realm.objects(objectClass)
+            let results = r.realm.objects(objectClass)
             
             let token = results.observe { change in
                 switch change {
@@ -173,7 +173,7 @@ extension ChangeManager {
 
 extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
-        try? store.write { realm in
+        try? r.write { realm in
             for d in deletion {
                 let syncedEntity = d.syncedEntity
                 let identifier = syncedEntity.identifier
@@ -193,7 +193,7 @@ extension ChangeManager {
                 let syncedEntity = m.syncedEntity
                                  ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
                 
-                try realm.write {
+                try r.write { realm in
                     realm.add(object, update: true)
                     realm.add(pendingRelationships, update: true)
                     syncedEntity.changeState = .synced
