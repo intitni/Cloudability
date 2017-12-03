@@ -1,8 +1,8 @@
 {
   "name": "Cloudability",
   "version": "0.1.0",
-  "summary": "A short description of Cloudability.",
-  "description": "TODO: Add long description of the pod here.",
+  "summary": "Grand Cloudablity to Realm in Swift",
+  "description": "A library that make Realm sync with CloudKit.",
   "homepage": "https://github.com/int123c/Cloudability",
   "license": {
     "type": "MIT",
@@ -16,7 +16,15 @@
     "tag": "0.1.0"
   },
   "platforms": {
-    "ios": "8.0"
+    "ios": "10.0"
   },
-  "source_files": "Cloudability/Classes/**/*"
+  "source_files": "Cloudability/Classes/**/*",
+  "dependencies": {
+    "RealmSwift": [
+
+    ],
+    "PromiseKit/CloudKit": [
+      "~> 4.0"
+    ]
+  }
 }
