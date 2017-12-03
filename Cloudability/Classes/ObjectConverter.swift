@@ -19,8 +19,6 @@ func realmObjectType(forName name: String) -> Object.Type {
 }
 
 class ObjectConverter {
-    lazy var encoder = JSONEncoder()
-    
     func convert(_ object: CloudableObject) -> CKRecord {
         let propertyList = object.objectSchema.properties
         let recordID = CKRecordID(recordName: object.id, zoneID: zoneID)
@@ -81,34 +79,33 @@ class ObjectConverter {
                 
             // when things a relationship
             case .object:
-                let relationship: PendingRelationship = {
-                    let p = PendingRelationship()
-                    p.fromType = recordType
-                    p.fromIdentifier = id
-                    p.toType = property.objectClassName!
-                    p.propertyName = property.name
-                    if let id = recordValue?.string {
-                        p.targetIdentifierData = try! encoder.encode([id])
-                    } else {
-                        p.targetIdentifierData = try! encoder.encode([String]())
-                    }
-                    return p
-                }()
-                pendingRelationships.append(relationship)
-            case .array:
-                guard let recordValue = recordValue else { break }
-                let ids = recordValue.list as! [String]
-                let relationship: PendingRelationship = {
-                    let p = PendingRelationship()
-                    p.fromType = recordType
-                    p.fromIdentifier = id
-                    p.toType = property.objectClassName!
-                    p.propertyName = property.name
-                    p.targetIdentifierData = try! encoder.encode(ids)
-                    return p
-                }()
-                pendingRelationships.append(relationship)
-                
+                if !property.isArray {
+                    let relationship: PendingRelationship = {
+                        let p = PendingRelationship()
+                        p.fromType = recordType
+                        p.fromIdentifier = id
+                        p.toType = property.objectClassName!
+                        p.propertyName = property.name
+                        if let id = recordValue?.string {
+                            p.targetIdentifiers.append(id)
+                        }
+                        return p
+                    }()
+                    pendingRelationships.append(relationship)
+                } else {
+                    guard let recordValue = recordValue else { break }
+                    let ids = recordValue.list as! [String]
+                    let relationship: PendingRelationship = {
+                        let p = PendingRelationship()
+                        p.fromType = recordType
+                        p.fromIdentifier = id
+                        p.toType = property.objectClassName!
+                        p.propertyName = property.name
+                        p.targetIdentifiers.append(objectsIn: ids)
+                        return p
+                    }()
+                    pendingRelationships.append(relationship)
+                }
             case .linkingObjects: break // ignored
             }
         }
@@ -130,17 +127,18 @@ class ObjectConverter {
         case .date:   return value as? Date as CKRecordValue?
             
         case .object:
-            guard let object = value as? Object & CanUploadToCloud
-                else { return nil }
-            return object.id as CKRecordValue
-        case .array:
-            let className = property.objectClassName!
-            let ownerType = realmObjectType(forName: className)
-            let list = object.dynamicList(property.name)
-            guard let ownerPrimaryKey = ownerType.primaryKey() else { return nil }
-            let ids = list.flatMap { $0[ownerPrimaryKey] as? String }
-            return ids as NSArray
-            
+            if !property.isArray {
+                guard let object = value as? CloudableObject
+                    else { return nil }
+                return object.id as CKRecordValue
+            } else {
+                let className = property.objectClassName!
+                let ownerType = realmObjectType(forName: className)
+                let list = object.dynamicList(property.name)
+                guard let ownerPrimaryKey = ownerType.primaryKey() else { return nil }
+                let ids = list.flatMap { $0[ownerPrimaryKey] as? String }
+                return ids as NSArray
+            }
         case .linkingObjects: return nil
         }
     }
