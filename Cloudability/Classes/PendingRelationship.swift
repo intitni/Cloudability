@@ -22,7 +22,7 @@ class PendingRelationship: Object {
     @objc dynamic var fromIdentifier: String! { didSet { setID() } }
     @objc dynamic var propertyName: String! { didSet { setID() } }
     @objc dynamic var toType: String!
-    @objc dynamic var targetIdentifierData: Data!
+    var targetIdentifiers: List<String> = List<String>()
     
     override class func primaryKey() -> String? { return "id" }
     
@@ -36,20 +36,19 @@ class PendingRelationship: Object {
 
 extension ItemStore {
     func applyPendingRelationships() {
-        let decoder = JSONDecoder()
         for r in pendingRelationships {
             do {
                 try write { realm in
-                    try apply(r, decodingWith: decoder)
+                    try apply(r)
                     realm.delete(r)
                 }
             } catch PendingRelationshipError.partiallyConnected {
-                dPrint("Can not fullfill PendingRelationship \(r.fromType).\(r.propertyName)")
+                print("Can not fullfill PendingRelationship \(r.fromType).\(r.propertyName)")
             } catch PendingRelationshipError.dataCorrupted {
-                dPrint("Data corrupted for PendingRelationship \(r.fromType).\(r.propertyName)")
+                print("Data corrupted for PendingRelationship \(r.fromType).\(r.propertyName)")
                 realm.delete(r)
             } catch {
-                dPrint(error.localizedDescription)
+                print(error.localizedDescription)
             }
         }
     }
@@ -63,25 +62,36 @@ extension ItemStore {
         return realm.objects(PendingRelationship.self)
     }
     
-    private func apply(_ pendingRelationship: PendingRelationship, decodingWith: JSONDecoder) throws {
-        guard let ids = try? decodingWith.decode([String].self, from: pendingRelationship.targetIdentifierData)
-            else { throw PendingRelationshipError.dataCorrupted }
-        
+    private func apply(_ pendingRelationship: PendingRelationship) throws {
         let fromType = realmObjectType(forName: pendingRelationship.fromType)
-        guard let object = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
+        guard let fromTypeObject = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
             else { throw PendingRelationshipError.partiallyConnected }
+        
+        guard let object = fromTypeObject as? CloudableObject else {
+            print("Object for type '\(pendingRelationship.fromType)' in PendingRelationship is not Cloudable.")
+            throw PendingRelationshipError.dataCorrupted
+        }
         
         guard let property = object.objectSchema.properties
             .filter({ $0.name == pendingRelationship.propertyName })
             .first
-            else { throw PendingRelationshipError.dataCorrupted }
+        else {
+            print("Object for type '\(object.typeName)' doesn't have property named '\(pendingRelationship.propertyName)'")
+            throw PendingRelationshipError.dataCorrupted
+        }
+        
+        guard property.type == .object else {
+            print("Property '\(object.typeName).\(pendingRelationship.propertyName)' is not pointing to object(s).")
+            throw PendingRelationshipError.dataCorrupted
+        }
+        
+        let ids = pendingRelationship.targetIdentifiers
         
         //let toType = realmObjectType(forName: pendingRelationship.toType)
         let objectFetcher: (String) -> DynamicObject? = { [unowned self] id in
             return self.realm.dynamicObject(ofType: pendingRelationship.toType, forPrimaryKey: id)
         }
-        switch property.type {
-        case .array:
+        if property.isArray {
             var everyoneok = true
             let targets = object.dynamicList(property.name)
             targets.removeAll()
@@ -90,11 +100,10 @@ extension ItemStore {
                 targets.append(target)
             }
             if !everyoneok { throw PendingRelationshipError.partiallyConnected }
-        case .object:
+        } else {
             guard let id = ids.first else { object[property.name] = nil; return }
             guard let target = objectFetcher(id) else { throw PendingRelationshipError.partiallyConnected }
             object[property.name] = target
-        default: throw PendingRelationshipError.dataCorrupted
         }
     }
 }

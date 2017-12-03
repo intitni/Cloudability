@@ -9,8 +9,6 @@
 import RealmSwift
 import CloudKit
 
-typealias CloudableObject = Object & CanUploadToCloud
-
 func realmObjectType(forName name: String) -> Object.Type {
     if let objClass = NSClassFromString(name) {
         return objClass as! Object.Type

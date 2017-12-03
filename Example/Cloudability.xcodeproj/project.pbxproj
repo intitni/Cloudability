@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1348F8AF1FD3FC7F0019A524 /* Pilot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8AE1FD3FC7F0019A524 /* Pilot.swift */; };
+		1348F8B11FD3FC890019A524 /* MobileArmor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B01FD3FC890019A524 /* MobileArmor.swift */; };
+		1348F8B31FD3FC9D0019A524 /* MobileSuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */; };
+		1348F8B71FD3FD030019A524 /* BattleShip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B61FD3FD030019A524 /* BattleShip.swift */; };
+		1348F8B91FD3FE9C0019A524 /* ObjectConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */; };
 		31CF9D429EDE24D3A920427D /* Pods_Cloudability_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
@@ -28,9 +33,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1348F8AE1FD3FC7F0019A524 /* Pilot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pilot.swift; sourceTree = "<group>"; };
+		1348F8B01FD3FC890019A524 /* MobileArmor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileArmor.swift; sourceTree = "<group>"; };
+		1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSuit.swift; sourceTree = "<group>"; };
+		1348F8B61FD3FD030019A524 /* BattleShip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleShip.swift; sourceTree = "<group>"; };
+		1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectConverterTests.swift; sourceTree = "<group>"; };
 		157BE5BFEBE066064CF26CFA /* Pods-Cloudability_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		196FBBD2AE35C4B86E3F8298 /* Pods_Cloudability_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		367760927C64A1FE87A863C7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		367760927C64A1FE87A863C7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* Cloudability_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cloudability_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -42,11 +52,11 @@
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		62BBCE3E7D4E489210500B75 /* Pods-Cloudability_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example.release.xcconfig"; sourceTree = "<group>"; };
-		84DFC48F53271140BCE9584D /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		84DFC48F53271140BCE9584D /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		A1324F57549CE42BFA0DA95D /* Pods-Cloudability_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA2078B033295A63EFEB4148 /* Pods-Cloudability_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example.debug.xcconfig"; sourceTree = "<group>"; };
-		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; };
+		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +129,10 @@
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
+				1348F8AE1FD3FC7F0019A524 /* Pilot.swift */,
+				1348F8B01FD3FC890019A524 /* MobileArmor.swift */,
+				1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */,
+				1348F8B61FD3FD030019A524 /* BattleShip.swift */,
 			);
 			name = "Example for Cloudability";
 			path = Cloudability;
@@ -136,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				607FACEB1AFB9204008FA782 /* Tests.swift */,
+				1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
 			);
 			path = Tests;
@@ -377,7 +392,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
+				1348F8B11FD3FC890019A524 /* MobileArmor.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
+				1348F8B71FD3FD030019A524 /* BattleShip.swift in Sources */,
+				1348F8B31FD3FC9D0019A524 /* MobileSuit.swift in Sources */,
+				1348F8AF1FD3FC7F0019A524 /* Pilot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -386,6 +405,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACEC1AFB9204008FA782 /* Tests.swift in Sources */,
+				1348F8B91FD3FE9C0019A524 /* ObjectConverterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

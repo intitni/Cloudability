@@ -246,13 +246,4 @@ extension Cloud {
     }
 }
 
-protocol CanUploadToCloud: class {
-    var id: String { get set }
-    var typeName: String { get }
-}
 
-extension CanUploadToCloud where Self: Object  {
-    var typeName: String {
-        return type(of:self).className()
-    }
-}

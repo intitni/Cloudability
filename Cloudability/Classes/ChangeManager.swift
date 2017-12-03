@@ -35,19 +35,19 @@ class ChangeManager {
     }
     
     deinit {
-        collectionInsertionObservations.forEach { $0.stop() }
-        objectObservations.forEach { $0.1.stop() }
+        collectionInsertionObservations.forEach { $0.invalidate() }
+        objectObservations.forEach { $0.1.invalidate() }
     }
 }
 
 extension ChangeManager {
     func setupSyncedEntities() {
         guard store.syncedEntities.count <= 0 else {
-            dPrint("ChangeManager >> Synced entities already setup.")
+            print("ChangeManager >> Synced entities already setup.")
             return
         }
         
-        dPrint("ChangeManager >> Setting up synced entities.")
+        print("ChangeManager >> Setting up synced entities.")
         
         for schema in store.realm.schema.objectSchema {
             let objectClass = realmObjectType(forName: schema.className)
@@ -64,7 +64,7 @@ extension ChangeManager {
             }
         }
         
-        dPrint("ChangeManager >> All synced entities set up.")
+        print("ChangeManager >> All synced entities set up.")
     }
     
     func detachSyncedEntities() throws {
@@ -139,24 +139,24 @@ extension ChangeManager {
             let primaryKey = objectClass.primaryKey()!
             let results = store.realm.objects(objectClass)
             
-            let token = results.addNotificationBlock { change in
+            let token = results.observe { change in
                 switch change {
                 case .initial: break
                 case let .update(_, _, insertions, _):
-                    // do something
-                case .error(let e): dPrint(e.localizedDescription)
+                    break // do something
+                case .error(let e): print(e.localizedDescription)
                 }
             }
             collectionInsertionObservations.append(token)
             
             for object in results {
-                let token = object.addNotificationBlock { change in
+                let token = object.observe { change in
                     switch change {
                     case .change(let properties):
-                        // do something
+                        break // do something
                     case .deleted:
-                        // do something
-                    case .error(let e): dPrint(e.localizedDescription)
+                        break // do something
+                    case .error(let e): print(e.localizedDescription)
                     }
                 }
                 
@@ -200,17 +200,7 @@ extension ChangeManager {
                     realm.add(syncedEntity, update: true)
                 }
                 
-                // following behaviours
-                switch syncedEntity.type {
-                case Item.className():
-                    let item = object as! Item
-                    try store.setupNotifications(for: item)
-                case ItemKind.className(): break
-                case Category.className(): break
-                case ForwardStrategy.className(): break
-                case InStockStrategy.className(): break
-                default: fatalError()
-                }
+                
             } catch {
                 dPrint(error.localizedDescription)
             }

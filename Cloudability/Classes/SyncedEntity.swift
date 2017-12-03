@@ -66,7 +66,7 @@ extension ItemStore {
         return realm.objects(SyncedEntity.self)
     }
     
-    func syncedEntity(withIdentifier identifier: ID) -> SyncedEntity? {
+    func syncedEntity(withIdentifier identifier: String) -> SyncedEntity? {
         guard identifier != "" else { return nil }
         return syncedEntities
             .filter(NSPredicate(format: "identifier == %@", identifier))
