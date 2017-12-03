@@ -97,7 +97,7 @@ extension ChangeManager {
         
         let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
             let object = realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
-            return (object as? Object & CanUploadToCloud).map(objectConverter.convert)
+            return (object as? CloudableObject).map(objectConverter.convert)
         }
         
         let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
@@ -200,9 +200,8 @@ extension ChangeManager {
                     realm.add(syncedEntity, update: true)
                 }
                 
-                
             } catch {
-                dPrint(error.localizedDescription)
+                print(error.localizedDescription)
             }
         }
     }
