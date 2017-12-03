@@ -10,5 +10,6 @@ import Foundation
 import RealmSwift
 
 class Pilot: Object {
-    
+    @objc dynamic var name = ""
+    @objc dynamic var age = 18
 }

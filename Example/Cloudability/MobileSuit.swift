@@ -10,5 +10,6 @@ import Foundation
 import RealmSwift
 
 class MobileSuit: Object {
-    
+    @objc dynamic var type = ""
+    let pilots = List<Pilot>()
 }

@@ -10,6 +10,8 @@ import Foundation
 import RealmSwift
 
 class BattleShip: Object {
-    
+    var mobileSuits = List<MobileSuit>()
     var mobileArmors = List<MobileArmor>()
+    @objc dynamic var name = ""
+    @objc dynamic var msCatapults = 1
 }

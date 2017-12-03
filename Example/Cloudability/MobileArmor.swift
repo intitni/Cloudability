@@ -10,5 +10,7 @@ import Foundation
 import RealmSwift
 
 class MobileArmor: Object {
-    
+    @objc dynamic var type = ""
+    @objc dynamic var numberOfPilotsNeeded = 1
+    let pilots = List<Pilot>()
 }
