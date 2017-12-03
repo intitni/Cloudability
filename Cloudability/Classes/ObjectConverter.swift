@@ -21,8 +21,8 @@ func realmObjectType(forName name: String) -> Object.Type {
 class ObjectConverter {
     func convert(_ object: CloudableObject) -> CKRecord {
         let propertyList = object.objectSchema.properties
-        let recordID = CKRecordID(recordName: object.id, zoneID: zoneID)
-        let record = CKRecord(recordType: object.typeName, recordID: recordID)
+        let recordID = object.recordID
+        let record = CKRecord(recordType: object.recordType, recordID: recordID)
         
         for property in propertyList {
             record[property.name] = convert(property, of: object)
@@ -38,9 +38,9 @@ class ObjectConverter {
         let object = type.init() as! CloudableObject
         
         var pendingRelationships = [PendingRelationship]()
-        object.id = id
-        let propertyList = object.objectSchema.properties
+        object.pkProperty = id
         
+        let propertyList = object.objectSchema.properties
         for property in propertyList where property.name != type.primaryKey() {
             let recordValue = record[property.name]
             
@@ -130,7 +130,7 @@ class ObjectConverter {
             if !property.isArray {
                 guard let object = value as? CloudableObject
                     else { return nil }
-                return object.id as CKRecordValue
+                return object.pkProperty as CKRecordValue
             } else {
                 let className = property.objectClassName!
                 let ownerType = realmObjectType(forName: className)

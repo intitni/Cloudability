@@ -76,12 +76,12 @@ extension ItemStore {
             .filter({ $0.name == pendingRelationship.propertyName })
             .first
         else {
-            print("Object for type '\(object.typeName)' doesn't have property named '\(pendingRelationship.propertyName)'")
+            print("Object for type '\(object.recordType)' doesn't have property named '\(pendingRelationship.propertyName)'")
             throw PendingRelationshipError.dataCorrupted
         }
         
         guard property.type == .object else {
-            print("Property '\(object.typeName).\(pendingRelationship.propertyName)' is not pointing to object(s).")
+            print("Property '\(object.recordType).\(pendingRelationship.propertyName)' is not pointing to object(s).")
             throw PendingRelationshipError.dataCorrupted
         }
         
