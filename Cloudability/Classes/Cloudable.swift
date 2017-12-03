@@ -18,8 +18,6 @@ public protocol Cloudable: class {
     static var recordType: String { get }
     /// Defaultly the class name of an object.
     var recordType: String { get }
-    /// Defaultly `recordTypesZone`.
-    static var recordZoneID: CKRecordZoneID { get }
     
     /// Check if an item is deleted, used for soft deletion locally.
     ///
@@ -38,10 +36,6 @@ extension Cloudable where Self: Object  {
         return Self.recordType
     }
     
-    public static var recordZoneID: CKRecordZoneID {
-        return CKRecordZoneID(zoneName: "\(recordType)sZone", ownerName: CKCurrentUserDefaultName)
-    }
-    
     private var primaryKeyPropertyName: String {
         guard let sharedSchema = Self.sharedSchema() else {
             preconditionFailure("No schema found for object of type '\(recordType)'. Hint: Check implementation of the Object.")
@@ -57,7 +51,7 @@ extension Cloudable where Self: Object  {
     public var recordID: CKRecordID {
         let propertyName = primaryKeyPropertyName
         if let string = self[propertyName] as? String {
-            return CKRecordID(recordName: string, zoneID: Self.recordZoneID)
+            return CKRecordID(recordName: string)
         }
         
         fatalError("The type of primary for object of type '\(recordType)' should be `String`. Hint: Check implementation of the Object.")

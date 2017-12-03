@@ -11,9 +11,6 @@ import CloudKit
 import PromiseKit
 import RealmSwift
 
-let zoneID = CKRecordZoneID(zoneName: "Fridge", ownerName: CKCurrentUserDefaultName)
-let cloud = Cloud(containerIdentifier: "Fridge", recordZoneID: zoneID)
-
 enum CloudError: Error {
     case AlreadySyncing
     case ICloudAccountNotAvailable
