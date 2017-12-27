@@ -7,15 +7,11 @@
 //
 
 import RealmSwift
+import Realm
 import CloudKit
 
-func realmObjectType(forName name: String) -> Object.Type {
-    if let objClass = NSClassFromString(name) {
-        return objClass as! Object.Type
-    } else {
-        let namespace = Bundle.main.infoDictionary!["CFBundleExecutable"] as! String
-        return NSClassFromString("\(namespace.replacingOccurrences(of: " ", with: "_")).\(name)") as! Object.Type
-    }
+func realmObjectType(forName name: String) -> Object.Type? {
+    return RLMSchema.class(for: name) as? Object.Type // let Realm do the job
 }
 
 class ObjectConverter {
@@ -34,7 +30,7 @@ class ObjectConverter {
     
     func convert(_ record: CKRecord) -> (CloudableObject, [PendingRelationship]) {
         let (recordType, id) = (record.recordType, record.recordID.recordName)
-        let type = realmObjectType(forName: recordType)
+        let type = realmObjectType(forName: recordType)!
         let object = type.init() as! CloudableObject
         
         var pendingRelationships = [PendingRelationship]()
@@ -133,7 +129,7 @@ class ObjectConverter {
                 return object.pkProperty as CKRecordValue
             } else {
                 let className = property.objectClassName!
-                let ownerType = realmObjectType(forName: className)
+                let ownerType = realmObjectType(forName: className)!
                 let list = object.dynamicList(property.name)
                 guard let ownerPrimaryKey = ownerType.primaryKey() else { return nil }
                 let ids = list.flatMap { $0[ownerPrimaryKey] as? String }

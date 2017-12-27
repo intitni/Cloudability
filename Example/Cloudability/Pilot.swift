@@ -11,6 +11,11 @@ import RealmSwift
 import Cloudability
 
 class Pilot: Object, Cloudable {
+    @objc dynamic var id: String = UUID().uuidString
+    override class func primaryKey() -> String? {
+        return "id"
+    }
+    
     @objc dynamic var name = ""
     @objc dynamic var age = 18
     

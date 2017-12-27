@@ -11,8 +11,13 @@ import RealmSwift
 import Cloudability
 
 class MobileSuit: Object, Cloudable {
+    @objc dynamic var id: String = UUID().uuidString
+    override class func primaryKey() -> String? {
+        return "id"
+    }
+    
     @objc dynamic var type = ""
-    let pilots = List<Pilot>()
+    @objc dynamic var pilot: Pilot?
     
     @objc dynamic var isDeleted = false
 }

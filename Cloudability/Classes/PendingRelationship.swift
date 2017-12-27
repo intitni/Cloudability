@@ -63,7 +63,7 @@ extension R {
     }
     
     private func apply(_ pendingRelationship: PendingRelationship) throws {
-        let fromType = realmObjectType(forName: pendingRelationship.fromType)
+        let fromType = realmObjectType(forName: pendingRelationship.fromType)!
         guard let fromTypeObject = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
             else { throw PendingRelationshipError.partiallyConnected }
         

@@ -22,7 +22,7 @@ public protocol Cloudable: class {
     /// Check if an item is deleted, used for soft deletion locally.
     ///
     /// It's also good for local change observation of deleted objects, Since **truly-deleted** objects are no longer found.
-    var isDeleted: Bool { get }
+    var isDeleted: Bool { get set }
     
     var pkProperty: String { get set }
     

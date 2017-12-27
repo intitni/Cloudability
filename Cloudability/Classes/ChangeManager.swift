@@ -12,11 +12,6 @@ import PromiseKit
 import RealmSwift
 
 class ChangeManager {
-    weak var cloud: Cloud!
-    
-    var collectionInsertionObservations = [NotificationToken]()
-    var objectObservations = [ID: NotificationToken]()
-    
     enum ChangeError: Error {
         case RecordDataNotComplete
     }
@@ -30,50 +25,21 @@ class ChangeManager {
         let record: CKRecord
     }
     
+    weak var cloud: Cloud!
+    
+    var collectionInsertionObservations = [NotificationToken]()
+    
     init() {
-        setupObservations()
+        setupLocalDatabaseObservations()
     }
     
     deinit {
         collectionInsertionObservations.forEach { $0.invalidate() }
-        objectObservations.forEach { $0.1.invalidate() }
     }
 }
 
 extension ChangeManager {
-    func setupSyncedEntities() {
-        guard r.syncedEntities.count <= 0 else {
-            print("ChangeManager >> Synced entities already setup.")
-            return
-        }
-        
-        print("ChangeManager >> Setting up synced entities.")
-        
-        for schema in r.realm.schema.objectSchema {
-            let objectClass = realmObjectType(forName: schema.className)
-            guard objectClass is CloudableObject.Type else { continue }
-            let primaryKey = objectClass.primaryKey()!
-            let results = r.realm.objects(objectClass)
-            
-            let syncedEntities = results.map {
-                SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
-            }
-            
-            try! r.write { realm in
-                realm.add(syncedEntities)
-            }
-        }
-        
-        print("ChangeManager >> All synced entities set up.")
-    }
-    
-    func detachSyncedEntities() throws {
-        try r.write { realm in
-            _ = r.syncedEntities.map(realm.delete)
-        }
-    }
-    
-    func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) throws {
+    func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) {
         let m: [Modification] = modification.map {
                 return Modification(syncedEntity: r.syncedEntity(withIdentifier: $0.recordID.recordName),
                                     record: $0)
@@ -132,57 +98,125 @@ extension ChangeManager {
 }
 
 extension ChangeManager {
-    private func setupObservations() {
+    func setupSyncedEntitiesIfNeeded() {
+        guard r.syncedEntities.count <= 0 else {
+            print("ChangeManager >> Synced entities already setup.")
+            return
+        }
+        
+        print("ChangeManager >> Setting up synced entities.")
+        
         for schema in r.realm.schema.objectSchema {
-            let objectClass = realmObjectType(forName: schema.className)
+            let objectClass = realmObjectType(forName: schema.className)!
             guard objectClass is CloudableObject.Type else { continue }
             let primaryKey = objectClass.primaryKey()!
             let results = r.realm.objects(objectClass)
             
-            let token = results.observe { change in
-                switch change {
-                case .initial: break
-                case let .update(_, _, insertions, _):
-                    break // do something
-                case .error(let e): print(e.localizedDescription)
-                }
+            let syncedEntities = results.map {
+                SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
             }
-            collectionInsertionObservations.append(token)
             
-            for object in results {
-                let token = object.observe { change in
-                    switch change {
-                    case .change(let properties):
-                        break // do something
-                    case .deleted:
-                        break // do something
-                    case .error(let e): print(e.localizedDescription)
-                    }
-                }
-                
-                objectObservations[object[primaryKey] as! String] = token
+            try! r.write { realm in
+                realm.add(syncedEntities)
             }
+        }
+        print("ChangeManager >> All synced entities setup.")
+    }
+    
+    func detachSyncedEntities() {
+        try? r.write { realm in
+            _ = r.syncedEntities.map(realm.delete)
         }
     }
     
+    /// Observe all Cloudable object lists, for insertions and modifications.
+    private func setupLocalDatabaseObservations() {
+        for schema in r.realm.schema.objectSchema {
+            let objectClass = realmObjectType(forName: schema.className)!
+            guard objectClass is CloudableObject.Type else { continue }
+            let results = r.realm.objects(objectClass)
+            
+            let token = results.observe { [weak self] change in
+                switch change {
+                case .initial: break
+                case .error(let e): print(e.localizedDescription)
+                    
+                // We should not see any true deletion, soft deletion should be used in Cloudable objects.
+                case let .update(result, _, insertion, modification):
+                    print("ChangeManager >> Change detected.")
+                    guard let s = self else { return }                    
+                    
+                    /// All insertions and modifications, not marked as soft deleted
+                    let m: [CloudableObject] = (insertion + modification)
+                        .filter { $0 < result.count }
+                        .map { result[$0] as! CloudableObject }
+                        .filter { !$0.isDeleted }
+                    
+                    /// All soft deleted objects that changed.
+                    /// (it may be objects that already been deleted but still being modified)
+                    let d: [CloudableObject] = modification
+                        .filter { $0 < result.count }
+                        .map { result[$0] as! CloudableObject }
+                        .filter { $0.isDeleted }
+                
+                    s.handleLocalChange(modification: m, deletion: d)
+                }
+            }
+            collectionInsertionObservations.append(token)
+        }
+    }
+    
+    /// Write modifications and deletions to disk.
     private func writeToDisk(modification: [Modification], deletion: [Deletion]) {
         writeToDisk(deletion: deletion)
         writeToDisk(modification: modification)
+    }
+    
+    /// Update `SyncedEntities` then call `cloud` to `syncronize()`.
+    private func handleLocalChange(modification: [CloudableObject], deletion: [CloudableObject]) {
+        let mSyncedEntities = modification.map {
+            r.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
+        }
+        
+        let dSyncedEntities = deletion.map {
+            r.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
+        }
+        
+        try? r.write { realm in
+            for m in mSyncedEntities {
+                m.changeState = .changed
+                realm.add(m, update: true)
+            }
+            
+            for d in dSyncedEntities {
+                d.changeState = .changed
+                realm.add(d, update: true)
+            }
+        }
+        
+        try? cloud?.syncronize()
     }
 }
 
 extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
-        try? r.write { realm in
-            for d in deletion {
-                let syncedEntity = d.syncedEntity
-                let identifier = syncedEntity.identifier
-                let type = realmObjectType(forName: syncedEntity.type)
-                let object = realm.object(ofType: type, forPrimaryKey: identifier)
-                realm.delete(syncedEntity)
-                if let object = object { realm.delete(object) }
+        let realm = try! Realm()
+        realm.beginWrite()
+        
+        for d in deletion {
+            let syncedEntity = d.syncedEntity
+            let identifier = syncedEntity.identifier
+            let type = realmObjectType(forName: syncedEntity.type)!
+            let object = realm.object(ofType: type, forPrimaryKey: identifier)
+            syncedEntity.isDeleted = true
+            realm.add(syncedEntity, update: true)
+            if let object = object as? CloudableObject {
+                object.isDeleted = true
+                realm.add(object, update: true)
             }
         }
+        
+        try? realm.commitWrite(withoutNotifying: collectionInsertionObservations)
     }
     
     private func writeToDisk(modification: [Modification]) {

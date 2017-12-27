@@ -11,6 +11,11 @@ import RealmSwift
 import Cloudability
 
 class MobileArmor: Object, Cloudable {
+    @objc dynamic var id: String = UUID().uuidString
+    override class func primaryKey() -> String? {
+        return "id"
+    }
+    
     @objc dynamic var type = ""
     @objc dynamic var numberOfPilotsNeeded = 1
     let pilots = List<Pilot>()

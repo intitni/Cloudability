@@ -11,6 +11,11 @@ import RealmSwift
 import Cloudability
 
 class BattleShip: Object, Cloudable {
+    @objc dynamic var id: String = UUID().uuidString
+    override class func primaryKey() -> String? {
+        return "id"
+    }
+    
     var mobileSuits = List<MobileSuit>()
     var mobileArmors = List<MobileArmor>()
     @objc dynamic var name = ""
