@@ -8,6 +8,7 @@
 
 import XCTest
 import RealmSwift
+import CloudKit
 @testable import Cloudability
 @testable import Cloudability_Example
 
@@ -31,7 +32,6 @@ class ChangeManagerTests: XCTestCase {
     }
     
     func testSyncedEntityGeneration() {
-        // test data generation
         let tim: Pilot = {
             let p = Pilot()
             p.age = 21
@@ -59,7 +59,47 @@ class ChangeManagerTests: XCTestCase {
         XCTAssert(entity.changeState == .changed, "SyncedEntity changeState should be .changed, but is \(entity.changeState)")
     }
     
-
+    func testChangeManagerTakeInRecords_SingleModel() {
+        let pilotToBeDeleted: Pilot = {
+            let p = Pilot()
+            p.age = 21
+            p.name = "Tim"
+            return p
+        }()
+        
+        try? r.write { realm in
+            realm.add(pilotToBeDeleted)
+        }
+        
+        let pilotToBeAdded: Pilot = {
+            let p = Pilot()
+            p.age = 24
+            p.name = "John"
+            return p
+        }()
+        
+        let recordToBeAdded = ObjectConverter().convert(pilotToBeAdded)
+        let recordIDToBeDeleted = CKRecordID(recordName: pilotToBeDeleted.id)
+        
+        let changeManager = ChangeManager()
+        changeManager.setupSyncedEntitiesIfNeeded()
+        changeManager.handleSyncronizationGet(modification: [recordToBeAdded], deletion: [recordIDToBeDeleted])
+        
+        let pilots = r.realm.objects(Pilot.self)
+        XCTAssert(pilots.count == 2, " count should be 1, but is \(r.syncedEntities.count)")
+        XCTAssert(pilotToBeDeleted.isDeleted == true)
+        let addedPilot = pilots.filter({ !$0.isDeleted }).last
+        XCTAssertNotNil(addedPilot)
+        XCTAssert(addedPilot!.age == pilotToBeAdded.age)
+        XCTAssert(addedPilot!.name == pilotToBeAdded.name)
+        XCTAssert(addedPilot!.id == pilotToBeAdded.id)
+        
+        let syncedEntities = r.syncedEntities
+        XCTAssert(syncedEntities.count == 2, "SyncedEntities count should be 2, but is \(r.syncedEntities.count)")
+        for s in syncedEntities {
+            XCTAssert(s.changeState == .synced)
+        }
+    }
 }
 
 extension ChangeManagerTests {

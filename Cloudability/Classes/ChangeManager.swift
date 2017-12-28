@@ -182,61 +182,76 @@ extension ChangeManager {
             r.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
         }
         
-        try? r.write { realm in
-            for m in mSyncedEntities {
-                m.changeState = .changed
-                realm.add(m, update: true)
+        do {
+            let realm = try Realm()
+            realm.beginWrite()
+            try r.write { realm in
+                for m in mSyncedEntities {
+                    m.changeState = .changed
+                    realm.add(m, update: true)
+                }
+                
+                for d in dSyncedEntities {
+                    d.changeState = .changed
+                    realm.add(d, update: true)
+                }
             }
             
-            for d in dSyncedEntities {
-                d.changeState = .changed
-                realm.add(d, update: true)
-            }
+            try realm.commitWrite(withoutNotifying: collectionInsertionObservations)
+            
+            try cloud?.syncronize()
+        } catch {
+            print(error.localizedDescription)
         }
-        
-        try? cloud?.syncronize()
     }
 }
 
 extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
-        let realm = try! Realm()
-        realm.beginWrite()
-        
-        for d in deletion {
-            let syncedEntity = d.syncedEntity
-            let identifier = syncedEntity.identifier
-            let type = realmObjectType(forName: syncedEntity.type)!
-            let object = realm.object(ofType: type, forPrimaryKey: identifier)
-            syncedEntity.isDeleted = true
-            realm.add(syncedEntity, update: true)
-            if let object = object as? CloudableObject {
-                object.isDeleted = true
-                realm.add(object, update: true)
+        do {
+            let realm = try Realm()
+            realm.beginWrite()
+            
+            for d in deletion {
+                let syncedEntity = d.syncedEntity
+                let identifier = syncedEntity.identifier
+                let type = realmObjectType(forName: syncedEntity.type)!
+                let object = realm.object(ofType: type, forPrimaryKey: identifier)
+                syncedEntity.isDeleted = true
+                syncedEntity.changeState = .synced
+                realm.add(syncedEntity, update: true)
+                if let object = object as? CloudableObject {
+                    object.isDeleted = true
+                    realm.add(object, update: true)
+                }
             }
+            
+            try realm.commitWrite(withoutNotifying: collectionInsertionObservations)
+        } catch {
+            print(error.localizedDescription)
         }
-        
-        try? realm.commitWrite(withoutNotifying: collectionInsertionObservations)
     }
     
     private func writeToDisk(modification: [Modification]) {
-        for m in modification {
-            let ckRecord = m.record
-            let (object, pendingRelationships) = ObjectConverter().convert(ckRecord)
-            do {
+        do {
+            let realm = try Realm()
+            realm.beginWrite()
+            
+            for m in modification {
+                let ckRecord = m.record
+                let (object, pendingRelationships) = ObjectConverter().convert(ckRecord)
                 let syncedEntity = m.syncedEntity
-                                 ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
+                                ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
                 
-                try r.write { realm in
-                    realm.add(object, update: true)
-                    realm.add(pendingRelationships, update: true)
-                    syncedEntity.changeState = .synced
-                    realm.add(syncedEntity, update: true)
-                }
-                
-            } catch {
-                print(error.localizedDescription)
+                realm.add(object, update: true)
+                realm.add(pendingRelationships, update: true)
+                syncedEntity.changeState = .synced
+                realm.add(syncedEntity, update: true)
             }
+            
+            try realm.commitWrite(withoutNotifying: collectionInsertionObservations)
+        } catch {
+            print(error.localizedDescription)
         }
     }
 }
