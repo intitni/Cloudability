@@ -21,4 +21,11 @@ class MobileArmor: Object, Cloudable {
     let pilots = List<Pilot>()
     
     @objc dynamic var isDeleted = false
+    
+    convenience init(type: String, numberOfPilotsNeeded: Int, pilots: [Pilot]) {
+        self.init()
+        self.type = type
+        self.numberOfPilotsNeeded = numberOfPilotsNeeded
+        self.pilots.append(objectsIn: pilots)
+    }
 }

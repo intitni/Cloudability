@@ -32,12 +32,7 @@ class ChangeManagerTests: XCTestCase {
     }
     
     func testSyncedEntityGeneration() {
-        let tim: Pilot = {
-            let p = Pilot()
-            p.age = 21
-            p.name = "Tim"
-            return p
-        }()
+        let tim = Pilot(name: "Tim", age: 21)
         
         try? r.write { realm in
             realm.add(tim)
@@ -60,23 +55,13 @@ class ChangeManagerTests: XCTestCase {
     }
     
     func testChangeManagerTakeInRecords_SingleModel() {
-        let pilotToBeDeleted: Pilot = {
-            let p = Pilot()
-            p.age = 21
-            p.name = "Tim"
-            return p
-        }()
+        let pilotToBeDeleted = Pilot(name: "Tim", age: 21)
         
         try? r.write { realm in
             realm.add(pilotToBeDeleted)
         }
         
-        let pilotToBeAdded: Pilot = {
-            let p = Pilot()
-            p.age = 24
-            p.name = "John"
-            return p
-        }()
+        let pilotToBeAdded = Pilot(name: "John", age: 24)
         
         let recordToBeAdded = ObjectConverter().convert(pilotToBeAdded)
         let recordIDToBeDeleted = CKRecordID(recordName: pilotToBeDeleted.id)
@@ -84,6 +69,8 @@ class ChangeManagerTests: XCTestCase {
         let changeManager = ChangeManager()
         changeManager.setupSyncedEntitiesIfNeeded()
         changeManager.handleSyncronizationGet(modification: [recordToBeAdded], deletion: [recordIDToBeDeleted])
+        
+        // Assertion
         
         let pilots = r.realm.objects(Pilot.self)
         XCTAssert(pilots.count == 2, " count should be 1, but is \(r.syncedEntities.count)")
@@ -100,54 +87,16 @@ class ChangeManagerTests: XCTestCase {
             XCTAssert(s.changeState == .synced)
         }
     }
-}
-
-extension ChangeManagerTests {
-    private func generateFullSetTestData() {
-        let tim: Pilot = {
-            let p = Pilot()
-            p.age = 21
-            p.name = "Tim"
-            return p
-        }()
+    
+    func testChangeManagerTakeInRecord_SpaghettiModel() {
+        let tim = Pilot(name: "Tim", age: 21)
+        let john = Pilot(name: "John", age: 24)
+        let sarah = Pilot(name: "Sarah", age: 30)
         
-        let john: Pilot = {
-            let p = Pilot()
-            p.age = 24
-            p.name = "John"
-            return p
-        }()
+        let gundam = MobileSuit(type: "ZZZ", pilot: tim)
+        let armor = MobileArmor(type: "AAA", numberOfPilotsNeeded: 2, pilots: [john, tim])
         
-        let sarah: Pilot = {
-            let p = Pilot()
-            p.age = 30
-            p.name = "Sarah"
-            return p
-        }()
-        
-        let gundam: MobileSuit = {
-            let m = MobileSuit()
-            m.pilot = tim
-            m.type = "ZZZ"
-            return m
-        }()
-        
-        let armor: MobileArmor = {
-            let m = MobileArmor()
-            m.pilots.append(objectsIn: [john, tim])
-            m.numberOfPilotsNeeded = 2
-            m.type = "AAA"
-            return m
-        }()
-        
-        let battleShip: BattleShip = {
-            let s = BattleShip()
-            s.mobileArmors.append(armor)
-            s.mobileSuits.append(gundam)
-            s.msCatapults = 4
-            s.name = "Ship"
-            return s
-        }()
+        let battleShip = BattleShip(name: "Ship", msCatapults: 4, mobileSuits: [gundam], mobileArmors: [armor])
         
         try? r.write { realm in
             realm.add(tim)
@@ -157,8 +106,58 @@ extension ChangeManagerTests {
             realm.add(armor)
             realm.add(battleShip)
         }
+        
+        let changeManager = ChangeManager()
+        changeManager.setupSyncedEntitiesIfNeeded()
+        
+        let pilots = r.realm.objects(Pilot.self)
+        let recordIDToBeDeleted = [CKRecordID(recordName: tim.id), CKRecordID(recordName: gundam.id)]
+        
+        let newSarah = Pilot(value: sarah)
+        newSarah.age = 17 // girl's age should not exceed 18
+        let steve = Pilot(name: "Steve", age: 23)
+        let newGundam = MobileSuit(type: "MMM", pilot: sarah)
+        let lucus = Pilot(name: "Lucus", age: 18)
+        let newArmor = MobileArmor(type: "BBB", numberOfPilotsNeeded: 2, pilots: [steve, tim])
+        let newBattleShip = BattleShip(name: "NewShip", msCatapults: 3, mobileSuits: [newGundam], mobileArmors: [newArmor])
+        
+        let newObjects: [CloudableObject] = [newBattleShip, newArmor, steve, newSarah, lucus, newGundam]
+        let newRecords = newObjects.map { ObjectConverter().convert($0) }
+        
+        changeManager.handleSyncronizationGet(modification: newRecords, deletion: recordIDToBeDeleted)
+        
+        // Assertion
+        
+        let ships = r.realm.objects(BattleShip.self)
+        let armors = r.realm.objects(MobileArmor.self)
+        let suits = r.realm.objects(MobileSuit.self)
+        XCTAssert(pilots.count == 5)
+        XCTAssert(sarah.age == 17)
+        XCTAssert(tim.isDeleted == true)
+        XCTAssert(armors.count == 2)
+        XCTAssert(suits.count == 2)
+        
+        let addedBattleShip: BattleShip! = ships.filter({ $0.name == "NewShip" }).first
+        XCTAssertNotNil(addedBattleShip)
+        XCTAssertEqual(addedBattleShip.msCatapults, 3)
+        
+        // Relationship things starts from here
+        
+        let addedGundam: MobileSuit! = addedBattleShip.mobileSuits.first
+        XCTAssertNotNil(addedGundam)
+        XCTAssertEqual(addedGundam.type, "MMM")
+        let addedGundamPilot: Pilot! = addedGundam.pilot
+        XCTAssertNotNil(addedGundamPilot)
+        XCTAssertEqual(addedGundamPilot.name, "Sarah")
+        let addedArmor: MobileArmor! = addedBattleShip.mobileArmors.first
+        XCTAssertNotNil(addedArmor)
+        XCTAssertEqual(addedArmor.type, "BBB")
+        let addedArmorPilots = addedArmor.pilots
+        XCTAssertEqual(addedArmorPilots.count, 2)
     }
-    
+}
+
+extension ChangeManagerTests {
     func wait(for duration: TimeInterval) {
         let waitExpectation = expectation(description: "Waiting")
         

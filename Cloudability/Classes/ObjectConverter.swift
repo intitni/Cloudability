@@ -132,7 +132,7 @@ class ObjectConverter {
                 let ownerType = realmObjectType(forName: className)!
                 let list = object.dynamicList(property.name)
                 guard let ownerPrimaryKey = ownerType.primaryKey() else { return nil }
-                let ids = list.flatMap { $0[ownerPrimaryKey] as? String }
+                let ids = list.flatMap { $0.value(forKey: ownerPrimaryKey) as? String }
                 return ids as NSArray
             }
         case .linkingObjects: return nil

@@ -34,35 +34,18 @@ class PendingRelationship: Object {
     }
 }
 
+enum PendingRelationshipError: Error {
+    case partiallyConnected
+    case dataCorrupted
+}
+
 extension R {
-    func applyPendingRelationships() {
-        for r in pendingRelationships {
-            do {
-                try write { realm in
-                    try apply(r)
-                    realm.delete(r)
-                }
-            } catch PendingRelationshipError.partiallyConnected {
-                print("Can not fullfill PendingRelationship \(r.fromType).\(r.propertyName)")
-            } catch PendingRelationshipError.dataCorrupted {
-                print("Data corrupted for PendingRelationship \(r.fromType).\(r.propertyName)")
-                realm.delete(r)
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-    }
-    
-    private enum PendingRelationshipError: Error {
-        case partiallyConnected
-        case dataCorrupted
-    }
     
     var pendingRelationships: Results<PendingRelationship> {
         return realm.objects(PendingRelationship.self)
     }
     
-    private func apply(_ pendingRelationship: PendingRelationship) throws {
+    func apply(_ pendingRelationship: PendingRelationship) throws {
         let fromType = realmObjectType(forName: pendingRelationship.fromType)!
         guard let fromTypeObject = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
             else { throw PendingRelationshipError.partiallyConnected }

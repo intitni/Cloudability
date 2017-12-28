@@ -20,4 +20,10 @@ class Pilot: Object, Cloudable {
     @objc dynamic var age = 18
     
     @objc dynamic var isDeleted = false
+    
+    convenience init(name: String, age: Int) {
+        self.init()
+        self.name = name
+        self.age = age
+    }
 }
