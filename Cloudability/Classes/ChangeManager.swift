@@ -25,7 +25,7 @@ class ChangeManager {
         let record: CKRecord
     }
     
-    weak var cloud: Cloud!
+    weak var cloud: Cloud?
     
     var collectionInsertionObservations = [NotificationToken]()
     
@@ -55,25 +55,7 @@ extension ChangeManager {
         writeToDisk(modification: m, deletion: d)
     }
     
-    func generateUploads() throws -> (modification: [CKRecord], deletion: [CKRecordID]) {
-        let uploadingModificationSyncedEntities = Array(r.syncedEntities(of: [.new, .changed]))
-        let uploadingDeletionSyncedEntities = Array(r.syncedEntities(of: .deleted).filter("isDeleted == NO"))
-        
-        let objectConverter = ObjectConverter()
-        
-        let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
-            let object = r.realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
-            return (object as? CloudableObject).map(objectConverter.convert)
-        }
-        
-        let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
-            return CKRecordID(recordName: $0.identifier, zoneID: cloud.zoneID)
-        }
-        
-        return (modification, deletion)
-    }
-    
-    func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) throws {
+    func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
         let savedEntities: [SyncedEntity] = saved?
             .flatMap { record in
                 let id = record.recordID.recordName
@@ -85,14 +67,18 @@ extension ChangeManager {
             } ?? []
         
         let realm = try! Realm()
+        
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
             for entity in savedEntities {
                 entity.changeState = .synced
+                entity.modifiedTime = Date()
                 realm.add(entity, update: true)
             }
             
             for entity in deletedEntites {
+                entity.modifiedTime = Date()
                 entity.isDeleted = true
+                realm.add(entity, update: true)
             }
         }
     }
@@ -113,7 +99,7 @@ extension ChangeManager {
                 let objectClass = realmObjectType(forName: schema.className)!
                 guard objectClass is CloudableObject.Type else { continue }
                 let primaryKey = objectClass.primaryKey()!
-                let results = r.realm.objects(objectClass)
+                let results = realm.objects(objectClass)
                 
                 let syncedEntities = results.map {
                     SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
@@ -136,8 +122,8 @@ extension ChangeManager {
     /// Observe all Cloudable object lists, for insertions and modifications.
     private func setupLocalDatabaseObservations() {
         for schema in r.realm.schema.objectSchema {
-            let objectClass = realmObjectType(forName: schema.className)!
-            guard objectClass is CloudableObject.Type else { continue }
+            let objClass = realmObjectType(forName: schema.className)!
+            guard let objectClass = objClass as? CloudableObject.Type else { continue }
             let results = r.realm.objects(objectClass)
             
             let token = results.observe { [weak self] change in
@@ -148,19 +134,48 @@ extension ChangeManager {
                 // We should not see any true deletion, soft deletion should be used in Cloudable objects.
                 case let .update(result, _, insertion, modification):
                     dPrint("ChangeManager >> Change detected.")
-                    guard let s = self else { return }                    
+                    guard let ego = self else { return }                    
                     
                     /// All insertions and modifications, not marked as soft deleted
                     let m: [CloudableObject] = (insertion + modification)
                         .filter { $0 < result.count }
                         .map { result[$0] as! CloudableObject }
                     
-                    s.handleLocalModification(modification: m)
-                    try? s.cloud?.push()
+                    ego.handleLocalModification(modification: m)
+                    let uploads = ego.generateUploads(forSpecificType: objectClass)
+                    try? ego.cloud?.push(modification: uploads.modification, deletion: uploads.deletion)
                 }
             }
             collectionInsertionObservations.append(token)
         }
+    }
+    
+    func generateUploads(forSpecificType type: CloudableObject.Type? = nil) -> (modification: [CKRecord], deletion: [CKRecordID]) {
+        let realm = try! Realm()
+        
+        func syncedEntity(of changeState: [SyncedEntity.ChangeState]) -> [SyncedEntity] {
+            if let type = type {
+                return Array(r.syncedEntities(of: changeState).filter("type == \(type.className())"))
+            }
+            return Array(r.syncedEntities(of: changeState))
+        }
+        
+        let uploadingModificationSyncedEntities = syncedEntity(of: [.new, .changed])
+        let uploadingDeletionSyncedEntities = syncedEntity(of: [.deleted])
+        
+        let objectConverter = ObjectConverter()
+        
+        let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
+            let object = realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
+            return (object as? CloudableObject).map(objectConverter.convert)
+        }
+        
+        let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
+            if let cloud = cloud { return CKRecordID(recordName: $0.identifier, zoneID: cloud.zoneID) }
+            return CKRecordID(recordName: $0.identifier)
+        }
+        
+        return (modification, deletion)
     }
     
     /// Write modifications and deletions to disk.
@@ -182,7 +197,6 @@ extension ChangeManager {
                 do {
                     try r.apply(relationship)
                     realm.delete(relationship)
-                    
                 } catch PendingRelationshipError.partiallyConnected {
                     dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
                 } catch PendingRelationshipError.dataCorrupted {

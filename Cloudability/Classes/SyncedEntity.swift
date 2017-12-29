@@ -46,19 +46,10 @@ class SyncedEntity: Object {
     
     var objectType: Object.Type {
         get {
-            return realmObjectType(forName: type)
+            return realmObjectType(forName: type)!
         }
         set {
             type = newValue.className()
-        }
-    }
-    
-    private func realmObjectType(forName name: String) -> Object.Type {
-        if let objClass = NSClassFromString(name) {
-            return objClass as! Object.Type
-        } else {
-            let namespace = Bundle.main.infoDictionary!["CFBundleExecutable"] as! String
-            return NSClassFromString("\(namespace).\(name)") as! Object.Type
         }
     }
 }
@@ -77,7 +68,7 @@ extension R {
     
     func syncedEntities(of state: SyncedEntity.ChangeState) -> Results<SyncedEntity> {
         return syncedEntities
-            .filter(NSPredicate(format: "state == \(state.rawValue)"))
+            .filter(NSPredicate(format: "state == \(state.rawValue)")).filter("isDeleted == NO")
     }
     
     func syncedEntities(of states: [SyncedEntity.ChangeState]) -> Results<SyncedEntity> {

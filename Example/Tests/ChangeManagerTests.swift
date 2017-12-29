@@ -26,15 +26,17 @@ class ChangeManagerTests: XCTestCase {
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
-        try! r.write { realm in
+        let realm = try! Realm()
+        try! realm.write {
             realm.deleteAll()
         }
     }
     
     func testSyncedEntityGeneration() {
+        let realm = try! Realm()
         let tim = Pilot(name: "Tim", age: 21)
         
-        try? r.write { realm in
+        try? realm.write {
             realm.add(tim)
         }
         
@@ -43,11 +45,11 @@ class ChangeManagerTests: XCTestCase {
         
         let syncedEntities = r.syncedEntities
         
-        XCTAssert(syncedEntities.count == 1, "SyncedEntities count should be 1, but is \(r.syncedEntities.count)")
+        XCTAssert(syncedEntities.count == 1, "SyncedEntities count should be 1, but is \(syncedEntities.count)")
         let entity = syncedEntities.first!
         XCTAssert(entity.changeState == .new, "SyncedEntity changeState should be .new, but is \(entity.changeState)")
         
-        try? r.write { realm in
+        try? realm.write {
             tim.age = 22
         }
         wait(for: 5)
@@ -55,9 +57,10 @@ class ChangeManagerTests: XCTestCase {
     }
     
     func testChangeManagerTakeInRecords_SingleModel() {
+        let realm = try! Realm()
         let pilotToBeDeleted = Pilot(name: "Tim", age: 21)
         
-        try? r.write { realm in
+        try? realm.write {
             realm.add(pilotToBeDeleted)
         }
         
@@ -72,7 +75,7 @@ class ChangeManagerTests: XCTestCase {
         
         // Assertion
         
-        let pilots = r.realm.objects(Pilot.self)
+        let pilots = realm.objects(Pilot.self)
         XCTAssert(pilots.count == 1, " count should be 1, but is \(pilots.count)")
         XCTAssert(pilotToBeDeleted.isInvalidated)
         let addedPilot = pilots.last
@@ -89,6 +92,7 @@ class ChangeManagerTests: XCTestCase {
     }
     
     func testChangeManagerTakeInRecord_SpaghettiModel() {
+        let realm = try! Realm()
         let tim = Pilot(name: "Tim", age: 21)
         let john = Pilot(name: "John", age: 24)
         let sarah = Pilot(name: "Sarah", age: 30)
@@ -98,7 +102,7 @@ class ChangeManagerTests: XCTestCase {
         
         let battleShip = BattleShip(name: "Ship", msCatapults: 4, mobileSuits: [gundam], mobileArmors: [armor])
         
-        try? r.write { realm in
+        try? realm.write {
             realm.add(tim)
             realm.add(john)
             realm.add(sarah)
@@ -110,7 +114,7 @@ class ChangeManagerTests: XCTestCase {
         let changeManager = ChangeManager()
         changeManager.setupSyncedEntitiesIfNeeded()
         
-        let pilots = r.realm.objects(Pilot.self)
+        let pilots = realm.objects(Pilot.self)
         let recordIDToBeDeleted = [CKRecordID(recordName: tim.id), CKRecordID(recordName: gundam.id)]
         
         let newSarah = Pilot(value: sarah)
@@ -128,9 +132,9 @@ class ChangeManagerTests: XCTestCase {
         
         // Assertion
         
-        let ships = r.realm.objects(BattleShip.self)
-        let armors = r.realm.objects(MobileArmor.self)
-        let suits = r.realm.objects(MobileSuit.self)
+        let ships = realm.objects(BattleShip.self)
+        let armors = realm.objects(MobileArmor.self)
+        let suits = realm.objects(MobileSuit.self)
         XCTAssert(pilots.count == 4)
         XCTAssert(sarah.age == 17)
         XCTAssert(tim.isInvalidated)
@@ -154,6 +158,55 @@ class ChangeManagerTests: XCTestCase {
         XCTAssertEqual(addedArmor.type, "BBB")
         let addedArmorPilots = addedArmor.pilots
         XCTAssertEqual(addedArmorPilots.count, 1)
+    }
+    
+    func testGenerateAndFinishUpload() {
+        let realm = try! Realm()
+        let tim = Pilot(name: "Tim", age: 21)
+        let timID = tim.id
+        let john = Pilot(name: "John", age: 24)
+        let sarah = Pilot(name: "Sarah", age: 30)
+        
+        let gundam = MobileSuit(type: "ZZZ", pilot: tim)
+        let armor = MobileArmor(type: "AAA", numberOfPilotsNeeded: 2, pilots: [john, tim])
+        
+        let battleShip = BattleShip(name: "Ship", msCatapults: 4, mobileSuits: [gundam], mobileArmors: [armor])
+        
+        try? realm.write {
+            realm.add(tim)
+            realm.add(john)
+            realm.add(sarah)
+        }
+        
+        let changeManager = ChangeManager()
+        changeManager.setupSyncedEntitiesIfNeeded()
+        
+        try? realm.write {
+            realm.add(gundam)
+            realm.add(armor)
+            realm.add(battleShip)
+            realm.delete(cloudableObject: tim)
+        }
+        
+        wait(for: 3)
+        
+        let (modification, deletion) = changeManager.generateUploads()
+        
+        XCTAssertEqual(modification.count, 5)
+        XCTAssertEqual(deletion.count, 1)
+        XCTAssertEqual(deletion[0].recordName, timID)
+        XCTAssertEqual(Set(modification.filter({$0.recordType == Pilot.recordType}).map({$0.recordID.recordName})),
+                       Set([john.id, sarah.id]))
+        
+        changeManager.finishUploads(saved: modification, deleted: deletion)
+        
+        let deletedSyncedEntity: SyncedEntity! = realm.object(ofType: SyncedEntity.self, forPrimaryKey: timID)
+        XCTAssertNotNil(deletedSyncedEntity)
+        XCTAssert(deletedSyncedEntity.isDeleted)
+        let allOtherEntities = realm.objects(SyncedEntity.self).filter { $0.identifier != timID }
+        for s in allOtherEntities {
+            XCTAssertEqual(s.changeState, .synced)
+        }
     }
 }
 

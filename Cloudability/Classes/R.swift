@@ -26,12 +26,14 @@ public extension Realm {
     /// - Warning
     /// This method may only be called during a write transaction.
     func delete(cloudableObject: CloudableObject) {
+        let id = cloudableObject.pkProperty
         delete(cloudableObject)
-        guard let syncedEntity = object(ofType: SyncedEntity.self, forPrimaryKey: cloudableObject[type(of: cloudableObject).primaryKey()!])
+        guard let syncedEntity = object(ofType: SyncedEntity.self, forPrimaryKey: id)
             else { return }
         syncedEntity.changeState = .deleted
     }
     
+    /// Write that starts transaction only when it's not in transaction.
     public func safeWrite(withoutNotifying tokens: [NotificationToken] = [], _ block: (() throws -> Void)) throws {
         if isInWriteTransaction {
             try block()

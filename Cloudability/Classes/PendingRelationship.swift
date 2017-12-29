@@ -45,6 +45,8 @@ extension R {
         return realm.objects(PendingRelationship.self)
     }
     
+    /// - Warning
+    /// Must be inside a write transaction
     func apply(_ pendingRelationship: PendingRelationship) throws {
         let fromType = realmObjectType(forName: pendingRelationship.fromType)!
         guard let fromTypeObject = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
@@ -88,5 +90,7 @@ extension R {
             guard let target = objectFetcher(id) else { throw PendingRelationshipError.partiallyConnected }
             object[property.name] = target
         }
+        
+        pendingRelationship.isApplied = true
     }
 }

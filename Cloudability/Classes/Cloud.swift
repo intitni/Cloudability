@@ -29,7 +29,7 @@ public final class Cloud {
     let container: CKContainer
     let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     let zoneID: CKRecordZoneID
-    let dispatchQueue = DispatchQueue.global(qos: .utility)
+    let dispatchQueue = DispatchQueue(label: "com.intii.Cloudability.Cloud", qos: .utility)
     private(set) var customZone: CKRecordZone?
     
     public init(containerIdentifier: String, recordZoneID: CKRecordZoneID) {
@@ -84,7 +84,7 @@ extension Cloud {
         }
     }
     
-    func push() throws {
+    func push(modification: [CKRecord], deletion: [CKRecordID]) throws {
         dPrint("Cloud >> Start push.")
         
         Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
@@ -100,7 +100,7 @@ extension Cloud {
                 
         }.then { [weak self] Void -> Promise<Void>? in
             
-            self?.pushChangesOntoCloud()
+            self?.pushChangesOntoCloud(modification: modification, deletion: deletion)
                 
         }.always {
                 
@@ -162,19 +162,12 @@ extension Cloud {
         r.deleteSoftDeletedObjects()
     }
     
-    func pushChangesOntoCloud() -> Promise<Void> {
+    func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecordID]) -> Promise<Void> {
         return Promise<Void> { [weak self] fullfill, reject in
             
             Promise(value: ()).then(on: dispatchQueue) {
-                () -> ([CKRecord], [CKRecordID]) in
+                () -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
                 
-                guard let s = self else { throw NSError.cancelledError() }
-                
-                let uploads = try s.changeManager.generateUploads()
-                return (uploads.modification, uploads.deletion)
-                
-            }.then { (modification, deletion) -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
-                    
                 dPrint("Cloud >> Push local changes to cloud.")
                 guard let s = self else { throw NSError.cancelledError() }
                 
@@ -185,7 +178,7 @@ extension Cloud {
                 dPrint("Cloud >> Upload finished.")
                 guard let s = self else { throw NSError.cancelledError() }
                 
-                try s.changeManager.finishUploads(saved: saved, deleted: deleted)
+                s.changeManager.finishUploads(saved: saved, deleted: deleted)
                 fullfill(())
                     
             }.catch { error in
