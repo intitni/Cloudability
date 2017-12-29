@@ -73,9 +73,9 @@ class ChangeManagerTests: XCTestCase {
         // Assertion
         
         let pilots = r.realm.objects(Pilot.self)
-        XCTAssert(pilots.count == 2, " count should be 1, but is \(r.syncedEntities.count)")
-        XCTAssert(pilotToBeDeleted.isDeleted == true)
-        let addedPilot = pilots.filter({ !$0.isDeleted }).last
+        XCTAssert(pilots.count == 1, " count should be 1, but is \(pilots.count)")
+        XCTAssert(pilotToBeDeleted.isInvalidated)
+        let addedPilot = pilots.last
         XCTAssertNotNil(addedPilot)
         XCTAssert(addedPilot!.age == pilotToBeAdded.age)
         XCTAssert(addedPilot!.name == pilotToBeAdded.name)
@@ -131,11 +131,11 @@ class ChangeManagerTests: XCTestCase {
         let ships = r.realm.objects(BattleShip.self)
         let armors = r.realm.objects(MobileArmor.self)
         let suits = r.realm.objects(MobileSuit.self)
-        XCTAssert(pilots.count == 5)
+        XCTAssert(pilots.count == 4)
         XCTAssert(sarah.age == 17)
-        XCTAssert(tim.isDeleted == true)
+        XCTAssert(tim.isInvalidated)
         XCTAssert(armors.count == 2)
-        XCTAssert(suits.count == 2)
+        XCTAssert(suits.count == 1)
         
         let addedBattleShip: BattleShip! = ships.filter({ $0.name == "NewShip" }).first
         XCTAssertNotNil(addedBattleShip)
@@ -153,7 +153,7 @@ class ChangeManagerTests: XCTestCase {
         XCTAssertNotNil(addedArmor)
         XCTAssertEqual(addedArmor.type, "BBB")
         let addedArmorPilots = addedArmor.pilots
-        XCTAssertEqual(addedArmorPilots.count, 2)
+        XCTAssertEqual(addedArmorPilots.count, 1)
     }
 }
 

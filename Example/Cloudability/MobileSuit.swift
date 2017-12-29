@@ -19,8 +19,6 @@ class MobileSuit: Object, Cloudable {
     @objc dynamic var type = ""
     @objc dynamic var pilot: Pilot?
     
-    @objc dynamic var isDeleted = false
-    
     convenience init(type: String, pilot: Pilot) {
         self.init()
         self.type = type

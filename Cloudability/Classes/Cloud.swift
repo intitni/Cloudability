@@ -38,10 +38,11 @@ public final class Cloud {
         zoneID = recordZoneID
         changeManager = ChangeManager()
         changeManager.cloud = self
+        changeManager.setupSyncedEntitiesIfNeeded()
         setupPushNotificationIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
         
-        try? syncronize() // syncronize at launch
+        try? pull() // syncronize at launch
         
         resumeLongLivedOperationsIfPossible()
     }
@@ -56,11 +57,8 @@ public final class Cloud {
 extension Cloud {
     
     /// Start syncronization
-    public func syncronize() throws {
-        guard !syncing else { throw CloudError.AlreadySyncing }
-        
-        print("Cloud >> Start syncronization.")
-        syncing = true
+    public func pull() throws {
+        dPrint("Cloud >> Start pull.")
         
         Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
             
@@ -73,16 +71,40 @@ extension Cloud {
             guard case .available = accountStatus else { throw CloudError.ICloudAccountNotAvailable }
             return s.setupCustomZoneIfNeeded()
             
-        }.then { [weak self] Void -> Promise<Void> in
+        }.then { [weak self] Void -> Promise<Void>? in
+            
+            self?.getChangesFromCloud()
+            
+        }.always {
+                
+            dPrint("Cloud >> Syncronization finished.")
+                
+        }.catch { error in
+            
+        }
+    }
+    
+    func push() throws {
+        dPrint("Cloud >> Start push.")
+        
+        Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
             
             guard let s = self else { throw NSError.cancelledError() }
-            if s.cancelled { throw NSError.cancelledError() }
-            return s.getChangesFromCloud()
+            return s.container.accountStatus()
             
-        }.always { [weak self] in
+        }.then { [weak self] accountStatus -> Promise<Void> in
                 
-            print("Cloud >> Syncronization finished.")
-            self?.finish()
+            guard let s = self else { throw NSError.cancelledError() }
+            guard case .available = accountStatus else { throw CloudError.ICloudAccountNotAvailable }
+            return s.setupCustomZoneIfNeeded()
+                
+        }.then { [weak self] Void -> Promise<Void>? in
+            
+            self?.pushChangesOntoCloud()
+                
+        }.always {
+                
+            dPrint("Cloud >> Syncronization finished.")
                 
         }.catch { error in
             
@@ -99,19 +121,19 @@ extension Cloud {
             Promise(value: ()).then(on: dispatchQueue) {
                 self.databases.private.fetch(withRecordZoneID: self.zoneID)
             }.then { recordZone -> Void in
-                print("Cloud >>>> Zone already created, will use it directly.")
+                dPrint("Cloud >>>> Zone already created, will use it directly.")
                 self.customZone = recordZone
                 Defaults.createdCustomZone = true
                 fullfill(())
             }.catch { _ in // sadly zone was not created
-                print("Cloud >>>> Zone was not created, will create it now.")
+                dPrint("Cloud >>>> Zone was not created, will create it now.")
                 firstly {
                     self.databases.private.save(CKRecordZone(zoneID: self.zoneID))
                 }.then { recordZone -> Void in
-                    print("Cloud >>>> Zone was successfully created.")
+                    dPrint("Cloud >>>> Zone was successfully created.")
                     self.customZone = recordZone
                 }.catch { error in
-                    print("Cloud >>>> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                    dPrint("Cloud >>>> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
                     reject(error)
                 }
             }
@@ -125,7 +147,7 @@ extension Cloud {
             queue: OperationQueue.main,
             using: { [weak self] _ in
                 guard let s = self else { return }
-                try? s.syncronize()
+                try? s.pull()
             })
     }
     
@@ -139,38 +161,8 @@ extension Cloud {
         }
         r.deleteSoftDeletedObjects()
     }
-}
-
-// MARK: - Private
-
-extension Cloud {
-    private func getChangesFromCloud() -> Promise<Void> {
-        return Promise<Void> { [unowned self] fullfill, reject in
-            Promise(value: ()).then(on: dispatchQueue) {
-                () -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: CKServerChangeToken?)> in
-                
-                print("Cloud >> Fetch changes from private database.")
-                
-                return self.fetchChanges(from: self.databases.private)
-                
-            }.then { (modification, deletion, token) -> Void in
-                
-                print("Cloud >> Send data to changeManager to save to disk.")
-                
-                self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
-                Defaults.changeToken = token
-                
-                print("Cloud >> Change saved")
-                
-            }.catch { error in
-                
-                reject(error)
-                
-            }
-        }
-    }
     
-    private func pushChangesOntoCloud() -> Promise<Void> {
+    func pushChangesOntoCloud() -> Promise<Void> {
         return Promise<Void> { [weak self] fullfill, reject in
             
             Promise(value: ()).then(on: dispatchQueue) {
@@ -182,24 +174,46 @@ extension Cloud {
                 return (uploads.modification, uploads.deletion)
                 
             }.then { (modification, deletion) -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
-                
-                print("Cloud >> Push local changes to cloud.")
+                    
+                dPrint("Cloud >> Push local changes to cloud.")
                 guard let s = self else { throw NSError.cancelledError() }
                 
                 return s.pushChanges(to: s.databases.private, saving: modification, deleting: deletion)
-                
-            }.then { saved, deleted -> Void in
-                
-                print("Cloud >> Upload finished.")
-                guard let s = self else { throw NSError.cancelledError() }
                     
+            }.then { saved, deleted -> Void in
+                    
+                dPrint("Cloud >> Upload finished.")
+                guard let s = self else { throw NSError.cancelledError() }
+                
                 try s.changeManager.finishUploads(saved: saved, deleted: deleted)
                 fullfill(())
                     
             }.catch { error in
                     
                 reject(error)
-                    
+            }
+        }
+    }
+}
+
+// MARK: - Private
+
+extension Cloud {
+    private func getChangesFromCloud() -> Promise<Void> {
+        return Promise<Void> { [unowned self] fullfill, reject in
+            Promise(value: ()).then(on: dispatchQueue) {
+                
+                self.fetchChanges(from: self.databases.private)
+                
+            }.then { (modification, deletion, token) -> Void in
+                
+                self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
+                Defaults.changeToken = token
+                
+            }.catch { error in
+                
+                reject(error)
+                
             }
         }
     }
@@ -207,6 +221,9 @@ extension Cloud {
     private func fetchChanges(from database: CKDatabase)
         -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: CKServerChangeToken?)> {
         return Promise { fullfill, reject in
+            
+            dPrint("Cloud >> Fetch changes from private database.")
+            
             var recordsToSave = [CKRecord]()
             var recordsToDelete = [CKRecordID]()
             var lastChangeToken: CKServerChangeToken?
@@ -232,7 +249,7 @@ extension Cloud {
             operation.recordZoneFetchCompletionBlock = { (zoneId, changeToken, _, _, error) in
                 if let error = error {
                     reject(error)
-                    print("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
+                    dPrint("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
                     return
                 }
                 lastChangeToken = changeToken
@@ -241,7 +258,7 @@ extension Cloud {
             operation.fetchRecordZoneChangesCompletionBlock = { error in
                 if let error = error {
                     reject(error)
-                    print("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
+                    dPrint("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.changeToken)) database.")
                     return
                 }
                 
@@ -261,7 +278,7 @@ extension Cloud {
             operation.modifyRecordsCompletionBlock = { saved, deleted, error in
                 if let error = (error as? CKError),
                     case .partialFailure = error.code {
-                        print("Cloud >>>> Only apart of uploads are successfully applied to cloud.")
+                        dPrint("Cloud >>>> Only apart of uploads are successfully applied to cloud.")
                 }
                 fullfill((saved, deleted))
             }
@@ -280,17 +297,13 @@ extension Cloud {
                     guard error == nil else { return }
                     if let modifyOp = ope as? CKModifyRecordsOperation {
                         modifyOp.modifyRecordsCompletionBlock = { (_,_,_) in
-                            print("Resume modify records success!")
+                            dPrint("Resume modify records success!")
                         }
                         CKContainer.default().add(modifyOp)
                     }
                 })
             }
         }
-    }
-    
-    private func finish() {
-        syncing = false
     }
 }
 

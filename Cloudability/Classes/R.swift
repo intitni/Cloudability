@@ -9,10 +9,43 @@
 import Foundation
 import RealmSwift
 
+internal func dPrint(_ item: @autoclosure () -> Any) {
+    #if DEBUG
+        print(item())
+    #endif
+}
+
 typealias ID = String
 
 /// Gloabal realm in main thread.
 let r = R()
+
+public extension Realm {
+    
+    ///Deletes an CloudableObject from the Realm.
+    /// - Warning
+    /// This method may only be called during a write transaction.
+    func delete(cloudableObject: CloudableObject) {
+        delete(cloudableObject)
+        guard let syncedEntity = object(ofType: SyncedEntity.self, forPrimaryKey: cloudableObject[type(of: cloudableObject).primaryKey()!])
+            else { return }
+        syncedEntity.changeState = .deleted
+    }
+    
+    public func safeWrite(withoutNotifying tokens: [NotificationToken] = [], _ block: (() throws -> Void)) throws {
+        if isInWriteTransaction {
+            try block()
+        } else {
+            beginWrite()
+            do { try block() }
+            catch {
+                if isInWriteTransaction { cancelWrite() }
+                throw error
+            }
+            if isInWriteTransaction { try commitWrite(withoutNotifying: tokens) }
+        }
+    }
+}
 
 final class R {
     let configuration: Realm.Configuration
@@ -26,10 +59,10 @@ final class R {
     
     lazy var _mainRealm = { return try! Realm.init(configuration: Realm.Configuration.defaultConfiguration) }()
     
-    func write(_ block: ((Realm) throws -> Void)) throws {
+    func write(withoutNotifying tokens: [NotificationToken] = [], _ block: ((Realm) throws -> Void)) throws {
         do {
             let currentRealm = realm
-            try currentRealm.write {
+            try currentRealm.safeWrite(withoutNotifying: tokens) {
                 try block(currentRealm)
             }
         } catch let error {

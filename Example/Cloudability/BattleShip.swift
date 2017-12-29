@@ -21,8 +21,6 @@ class BattleShip: Object, Cloudable {
     @objc dynamic var name = ""
     @objc dynamic var msCatapults = 1
     
-    @objc dynamic var isDeleted = false
-    
     convenience init(name: String, msCatapults: Int, mobileSuits: [MobileSuit], mobileArmors: [MobileArmor]) {
         self.init()
         self.name = name

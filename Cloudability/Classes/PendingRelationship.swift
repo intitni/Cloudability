@@ -51,7 +51,7 @@ extension R {
             else { throw PendingRelationshipError.partiallyConnected }
         
         guard let object = fromTypeObject as? CloudableObject else {
-            print("Object for type '\(pendingRelationship.fromType)' in PendingRelationship is not Cloudable.")
+            dPrint("Object for type '\(pendingRelationship.fromType)' in PendingRelationship is not Cloudable.")
             throw PendingRelationshipError.dataCorrupted
         }
         
@@ -59,12 +59,12 @@ extension R {
             .filter({ $0.name == pendingRelationship.propertyName })
             .first
         else {
-            print("Object for type '\(object.recordType)' doesn't have property named '\(pendingRelationship.propertyName)'")
+            dPrint("Object for type '\(object.recordType)' doesn't have property named '\(pendingRelationship.propertyName)'")
             throw PendingRelationshipError.dataCorrupted
         }
         
         guard property.type == .object else {
-            print("Property '\(object.recordType).\(pendingRelationship.propertyName)' is not pointing to object(s).")
+            dPrint("Property '\(object.recordType).\(pendingRelationship.propertyName)' is not pointing to object(s).")
             throw PendingRelationshipError.dataCorrupted
         }
         

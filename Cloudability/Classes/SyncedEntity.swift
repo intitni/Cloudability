@@ -12,7 +12,7 @@ import RealmSwift
 /// to determine which object it is that the CKRecord or CKRecordID points to.
 class SyncedEntity: Object {
     enum ChangeState: Int {
-        case new = 0, changed, deleted, inserted, synced
+        case new = 0, changed, deleted, synced
     }
     
     @objc dynamic var identifier: String = ""
