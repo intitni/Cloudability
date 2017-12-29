@@ -23,7 +23,8 @@ class ObjectConverter {
         for property in propertyList {
             record[property.name] = convert(property, of: object)
         }
-        record["schemaVersion"] = NSNumber(value: r.realm.configuration.schemaVersion)
+        let realm = try! Realm()
+        record["schemaVersion"] = NSNumber(value: realm.configuration.schemaVersion)
         
         return record
     }

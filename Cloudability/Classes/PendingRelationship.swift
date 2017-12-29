@@ -39,17 +39,17 @@ enum PendingRelationshipError: Error {
     case dataCorrupted
 }
 
-extension R {
+extension Realm {
     
     var pendingRelationships: Results<PendingRelationship> {
-        return realm.objects(PendingRelationship.self)
+        return objects(PendingRelationship.self)
     }
     
     /// - Warning
     /// Must be inside a write transaction
     func apply(_ pendingRelationship: PendingRelationship) throws {
         let fromType = realmObjectType(forName: pendingRelationship.fromType)!
-        guard let fromTypeObject = realm.object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
+        guard let fromTypeObject = object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)
             else { throw PendingRelationshipError.partiallyConnected }
         
         guard let object = fromTypeObject as? CloudableObject else {
@@ -74,7 +74,7 @@ extension R {
         
         //let toType = realmObjectType(forName: pendingRelationship.toType)
         let objectFetcher: (String) -> DynamicObject? = { [unowned self] id in
-            return self.realm.dynamicObject(ofType: pendingRelationship.toType, forPrimaryKey: id)
+            return self.dynamicObject(ofType: pendingRelationship.toType, forPrimaryKey: id)
         }
         if property.isArray {
             var everyoneok = true

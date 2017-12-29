@@ -54,9 +54,9 @@ class SyncedEntity: Object {
     }
 }
 
-extension R {
+extension Realm {
     var syncedEntities: Results<SyncedEntity> {
-        return realm.objects(SyncedEntity.self)
+        return objects(SyncedEntity.self)
     }
     
     func syncedEntity(withIdentifier identifier: String) -> SyncedEntity? {

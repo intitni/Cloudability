@@ -43,7 +43,7 @@ class ChangeManagerTests: XCTestCase {
         let changeManager = ChangeManager()
         changeManager.setupSyncedEntitiesIfNeeded()
         
-        let syncedEntities = r.syncedEntities
+        let syncedEntities = realm.syncedEntities
         
         XCTAssert(syncedEntities.count == 1, "SyncedEntities count should be 1, but is \(syncedEntities.count)")
         let entity = syncedEntities.first!
@@ -84,8 +84,8 @@ class ChangeManagerTests: XCTestCase {
         XCTAssert(addedPilot!.name == pilotToBeAdded.name)
         XCTAssert(addedPilot!.id == pilotToBeAdded.id)
         
-        let syncedEntities = r.syncedEntities
-        XCTAssert(syncedEntities.count == 2, "SyncedEntities count should be 2, but is \(r.syncedEntities.count)")
+        let syncedEntities = realm.syncedEntities
+        XCTAssert(syncedEntities.count == 2, "SyncedEntities count should be 2, but is \(realm.syncedEntities.count)")
         for s in syncedEntities {
             XCTAssert(s.changeState == .synced)
         }

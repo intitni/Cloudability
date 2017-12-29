@@ -152,14 +152,7 @@ extension Cloud {
     }
     
     @objc func cleanUp() {
-        let deletedSyncedEntities = r.syncedEntities.filter("isDeleted == true")
-        let appliedPendingRelationships = r.pendingRelationships.filter("isApplied == true")
-        
-        try? r.write { realm in
-            realm.delete(deletedSyncedEntities)
-            realm.delete(appliedPendingRelationships)
-        }
-        r.deleteSoftDeletedObjects()
+        changeManager.cleanUp()
     }
     
     func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecordID]) -> Promise<Void> {

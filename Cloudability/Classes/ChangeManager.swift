@@ -40,15 +40,16 @@ class ChangeManager {
 
 extension ChangeManager {
     func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) {
+        let realm = try! Realm()
         let m: [Modification] = modification.map {
-                return Modification(syncedEntity: r.syncedEntity(withIdentifier: $0.recordID.recordName),
+                return Modification(syncedEntity: realm.syncedEntity(withIdentifier: $0.recordID.recordName),
                                     record: $0)
             }
     
         let d: [Deletion] = deletion
             .flatMap { recordID in
                 let identifier = recordID.recordName
-                guard let se = r.syncedEntity(withIdentifier: identifier) else { return nil }
+                guard let se = realm.syncedEntity(withIdentifier: identifier) else { return nil }
                 return Deletion(syncedEntity: SyncedEntity(value: se))
             }
         
@@ -56,17 +57,16 @@ extension ChangeManager {
     }
     
     func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
+        let realm = try! Realm()
         let savedEntities: [SyncedEntity] = saved?
             .flatMap { record in
                 let id = record.recordID.recordName
-                return r.syncedEntity(withIdentifier: id)
+                return realm.syncedEntity(withIdentifier: id)
             } ?? []
         let deletedEntites: [SyncedEntity] = deleted?
             .flatMap { recordID in
-                return r.syncedEntity(withIdentifier: recordID.recordName)
+                return realm.syncedEntity(withIdentifier: recordID.recordName)
             } ?? []
-        
-        let realm = try! Realm()
         
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
             for entity in savedEntities {
@@ -82,20 +82,30 @@ extension ChangeManager {
             }
         }
     }
+    
+    func cleanUp() {
+        let realm = try! Realm()
+        try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
+            let deletedSyncedEntities = realm.objects(SyncedEntity.self).filter("isDeleted == true")
+            let appliedPendingRelationships = realm.objects(SyncedEntity.self).filter("isApplied == true")
+            realm.delete(deletedSyncedEntities)
+            realm.delete(appliedPendingRelationships)
+        }
+    }
 }
 
 extension ChangeManager {
     func setupSyncedEntitiesIfNeeded() {
-        guard r.syncedEntities.count <= 0 else {
+        let realm = try! Realm()
+        guard realm.objects(SyncedEntity.self).count <= 0 else {
             dPrint("ChangeManager >> Synced entities already setup.")
             return
         }
         
         dPrint("ChangeManager >> Setting up synced entities.")
         
-        let realm = try! Realm()
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
-            for schema in r.realm.schema.objectSchema {
+            for schema in realm.schema.objectSchema {
                 let objectClass = realmObjectType(forName: schema.className)!
                 guard objectClass is CloudableObject.Type else { continue }
                 let primaryKey = objectClass.primaryKey()!
@@ -115,16 +125,17 @@ extension ChangeManager {
     func detachSyncedEntities() {
         let realm = try! Realm()
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
-            _ = r.syncedEntities.map(realm.delete)
+            _ = realm.syncedEntities.map(realm.delete)
         }
     }
     
     /// Observe all Cloudable object lists, for insertions and modifications.
     private func setupLocalDatabaseObservations() {
-        for schema in r.realm.schema.objectSchema {
+        let realm = try! Realm()
+        for schema in realm.schema.objectSchema {
             let objClass = realmObjectType(forName: schema.className)!
             guard let objectClass = objClass as? CloudableObject.Type else { continue }
-            let results = r.realm.objects(objectClass)
+            let results = realm.objects(objectClass)
             
             let token = results.observe { [weak self] change in
                 switch change {
@@ -134,7 +145,7 @@ extension ChangeManager {
                 // We should not see any true deletion, soft deletion should be used in Cloudable objects.
                 case let .update(result, _, insertion, modification):
                     dPrint("ChangeManager >> Change detected.")
-                    guard let ego = self else { return }                    
+                    guard let ego = self else { return }
                     
                     /// All insertions and modifications, not marked as soft deleted
                     let m: [CloudableObject] = (insertion + modification)
@@ -155,9 +166,9 @@ extension ChangeManager {
         
         func syncedEntity(of changeState: [SyncedEntity.ChangeState]) -> [SyncedEntity] {
             if let type = type {
-                return Array(r.syncedEntities(of: changeState).filter("type == \(type.className())"))
+                return Array(realm.syncedEntities(of: changeState).filter("type == \"\(type.className())\""))
             }
-            return Array(r.syncedEntities(of: changeState))
+            return Array(realm.syncedEntities(of: changeState))
         }
         
         let uploadingModificationSyncedEntities = syncedEntity(of: [.new, .changed])
@@ -193,9 +204,9 @@ extension ChangeManager {
     private func applyPendingRelationships() {
         let realm = try! Realm()
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
-            for relationship in r.pendingRelationships {
+            for relationship in realm.pendingRelationships {
                 do {
-                    try r.apply(relationship)
+                    try realm.apply(relationship)
                     realm.delete(relationship)
                 } catch PendingRelationshipError.partiallyConnected {
                     dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
@@ -211,11 +222,11 @@ extension ChangeManager {
     
     /// Update `SyncedEntities`.
     private func handleLocalModification(modification: [CloudableObject]) {
+        let realm = try! Realm()
         let mSyncedEntities = modification.map {
-            r.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
+            realm.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
         }
         
-        let realm = try! Realm()
         try? realm.safeWrite(withoutNotifying: collectionInsertionObservations) {
             for m in mSyncedEntities {
                 m.changeState = .changed
