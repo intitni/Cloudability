@@ -212,7 +212,6 @@ extension Cloud {
             var zoneIDs = [CKRecordZoneID]()
             
             let operation = CKFetchDatabaseChangesOperation(previousServerChangeToken: Defaults.serverChangeToken)
-            operation.isLongLived = true
             operation.fetchAllChanges = true
 
 //            operation.changeTokenUpdatedBlock = { token in
@@ -223,12 +222,15 @@ extension Cloud {
                 zoneIDs.append(zoneID)
             }
             
-            operation.fetchDatabaseChangesCompletionBlock = { token, _, error in
+            operation.fetchDatabaseChangesCompletionBlock = { [weak self] token, _, error in
                 if let error = error {
+                    self?.retryOperationIfPossible(with: error) {
+                        try? self?.pull()
+                    }
                     reject(error)
-                    dPrint("Cloud >>>> Error fetching database changes for private database.")
                     return
                 }
+                
                 Defaults.serverChangeToken = token
                 fullfill(zoneIDs)
             }
@@ -257,7 +259,6 @@ extension Cloud {
                     result[zoneID] = option
                 }))
             
-            operation.isLongLived = true
             operation.fetchAllChanges = true
             
             operation.recordChangedBlock = { record in
@@ -281,10 +282,12 @@ extension Cloud {
                 lastChangeTokens[zoneID] = changeToken
             }
             
-            operation.fetchRecordZoneChangesCompletionBlock = { error in
+            operation.fetchRecordZoneChangesCompletionBlock = { [weak self] error in
                 if let error = error {
+                    self?.retryOperationIfPossible(with: error) {
+                        try? self?.pull()
+                    }
                     reject(error)
-                    dPrint("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.serverChangeToken)) database.")
                     return
                 }
                 
@@ -301,11 +304,17 @@ extension Cloud {
         return Promise { fullfill, reject in
             let operation = CKModifyRecordsOperation(recordsToSave: save, recordIDsToDelete: deletion)
             operation.isLongLived = true
-            operation.modifyRecordsCompletionBlock = { saved, deleted, error in
-                if let error = (error as? CKError),
-                    case .partialFailure = error.code {
-                        dPrint("Cloud >>>> Only apart of uploads are successfully applied to cloud.")
+            operation.savePolicy = .changedKeys
+            operation.modifyRecordsCompletionBlock = { [weak self] saved, deleted, error in
+                if let error = error {
+                    
+                    self?.retryOperationIfPossible(with: error) {
+                        try? self?.push(modification: save, deletion: deletion)
+                    }
+                    reject(error)
+                    return
                 }
+                
                 fullfill((saved, deleted))
             }
             
@@ -321,11 +330,11 @@ extension Cloud {
             for id in operationIDs {
                 self?.container.fetchLongLivedOperation(withID: id, completionHandler: { operation, error in
                     guard error == nil else { return }
-                    if let modifyOp = operation as? CKModifyRecordsOperation {
-                        modifyOp.modifyRecordsCompletionBlock = { (_,_,_) in
-                            dPrint("Resume modify records success!")
+                    if let operation = operation as? CKModifyRecordsOperation {
+                        operation.modifyRecordsCompletionBlock = { (_,_,_) in
+                            dPrint("Cloud >> Resume modify records operation success!")
                         }
-                        self?.container.add(modifyOp)
+                        self?.container.add(operation)
                     }
                 })
             }
@@ -338,7 +347,7 @@ extension Cloud {
         case .zoneBusy, .serviceUnavailable, .requestRateLimited:
             guard let retryAfter = error.userInfo[CKErrorRetryAfterKey] as? Double else { break }
             let delay = DispatchTime.now() + retryAfter
-            dispatchQueue.asyncAfter(deadline: delay, execute: block)
+            DispatchQueue.main.asyncAfter(deadline: delay, execute: block)
         default: break
         }
     }
