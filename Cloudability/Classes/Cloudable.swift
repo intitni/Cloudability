@@ -12,12 +12,16 @@ import CloudKit
 public typealias CloudableObject = Object & Cloudable
 
 public protocol Cloudable: class {
-    var recordID: CKRecordID { get }
+    
+    static var zoneID: CKRecordZoneID { get }
+    var zoneID: CKRecordZoneID { get }
+    
     /// Defaultly the `className()`.
     static var recordType: String { get }
     /// Defaultly the class name of an object.
     var recordType: String { get }
     
+    var recordID: CKRecordID { get }
     var pkProperty: String { get set }
     
     func validate() -> Bool
@@ -44,13 +48,16 @@ extension Cloudable where Self: Object  {
         return primaryKeyProperty.name
     }
     
+    public static var zoneID: CKRecordZoneID {
+        return CKRecordZoneID(zoneName: recordType, ownerName: CKCurrentUserDefaultName)
+    }
+    
+    public var zoneID: CKRecordZoneID {
+        return Self.zoneID
+    }
+    
     public var recordID: CKRecordID {
-        let propertyName = primaryKeyPropertyName
-        if let string = self[propertyName] as? String {
-            return CKRecordID(recordName: string)
-        }
-        
-        fatalError("The type of primary for object of type '\(recordType)' should be `String`. Hint: Check implementation of the Object.")
+        return CKRecordID(recordName: pkProperty, zoneID: zoneID)
     }
     
     public var pkProperty: String {

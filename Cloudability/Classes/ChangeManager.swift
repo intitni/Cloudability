@@ -39,6 +39,15 @@ class ChangeManager {
 }
 
 extension ChangeManager {
+    var allZoneIDs: [CKRecordZoneID] {
+        let realm = try! Realm()
+        return realm.schema.objectSchema.flatMap {
+            let objClass = realmObjectType(forName: $0.className)!
+            guard let objectClass = objClass as? CloudableObject.Type else { return nil }
+            return objectClass.zoneID
+        }
+    }
+    
     func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) {
         let realm = try! Realm()
         let m: [Modification] = modification.map {
@@ -182,8 +191,7 @@ extension ChangeManager {
         }
         
         let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
-            if let cloud = cloud { return CKRecordID(recordName: $0.identifier, zoneID: cloud.zoneID) }
-            return CKRecordID(recordName: $0.identifier)
+            return CKRecordID(recordName: $0.identifier, zoneID: $0.objectType.zoneID) 
         }
         
         return (modification, deletion)

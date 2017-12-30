@@ -44,9 +44,9 @@ class SyncedEntity: Object {
         set { state = newValue.rawValue }
     }
     
-    var objectType: Object.Type {
+    var objectType: CloudableObject.Type {
         get {
-            return realmObjectType(forName: type)!
+            return realmObjectType(forName: type) as! CloudableObject.Type
         }
         set {
             type = newValue.className()
