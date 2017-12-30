@@ -315,20 +315,31 @@ extension Cloud {
     }
     
     private func resumeLongLivedOperationsIfPossible() {
-        CKContainer.default().fetchAllLongLivedOperationIDs { ( opeIDs, error) in
+        container.fetchAllLongLivedOperationIDs { [weak self] operationIDs, error in
             guard error == nil else { return }
-            guard let ids = opeIDs else { return }
-            for id in ids {
-                CKContainer.default().fetchLongLivedOperation(withID: id, completionHandler: { (ope, error) in
+            guard let operationIDs = operationIDs else { return }
+            for id in operationIDs {
+                self?.container.fetchLongLivedOperation(withID: id, completionHandler: { operation, error in
                     guard error == nil else { return }
-                    if let modifyOp = ope as? CKModifyRecordsOperation {
+                    if let modifyOp = operation as? CKModifyRecordsOperation {
                         modifyOp.modifyRecordsCompletionBlock = { (_,_,_) in
                             dPrint("Resume modify records success!")
                         }
-                        CKContainer.default().add(modifyOp)
+                        self?.container.add(modifyOp)
                     }
                 })
             }
+        }
+    }
+    
+    private func retryOperationIfPossible(with error: Error?, block: @escaping () -> Void) {
+        guard let error = error as? CKError else { return }
+        switch error.code {
+        case .zoneBusy, .serviceUnavailable, .requestRateLimited:
+            guard let retryAfter = error.userInfo[CKErrorRetryAfterKey] as? Double else { break }
+            let delay = DispatchTime.now() + retryAfter
+            dispatchQueue.asyncAfter(deadline: delay, execute: block)
+        default: break
         }
     }
 }
