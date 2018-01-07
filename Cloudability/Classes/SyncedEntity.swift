@@ -18,7 +18,6 @@ class SyncedEntity: Object {
     @objc dynamic var identifier: String = ""
     @objc dynamic var type: String = ""
     @objc dynamic var state: Int = 0
-    @objc dynamic var changedKeys: String?
     @objc dynamic var modifiedTime: Date?
     
     @objc dynamic var isDeleted = false

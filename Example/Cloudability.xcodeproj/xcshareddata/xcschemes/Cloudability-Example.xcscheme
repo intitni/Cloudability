@@ -53,6 +53,16 @@
                ReferencedContainer = "container:Cloudability.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "13D2852920025FE2003E2BBA"
+               BuildableName = "Cloudability_ExampleTest.xctest"
+               BlueprintName = "Cloudability_ExampleTest"
+               ReferencedContainer = "container:Cloudability.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference

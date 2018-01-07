@@ -46,7 +46,7 @@ extension Realm {
     }
     
     /// - Warning
-    /// Must be inside a write transaction
+    /// Must be inside write transaction
     func apply(_ pendingRelationship: PendingRelationship) throws {
         let fromType = realmObjectType(forName: pendingRelationship.fromType)!
         guard let fromTypeObject = object(ofType: fromType, forPrimaryKey: pendingRelationship.fromIdentifier)

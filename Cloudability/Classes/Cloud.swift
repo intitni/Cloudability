@@ -18,6 +18,7 @@ public extension Notification.Name {
 public enum CloudError: Error {
     case AlreadySyncing
     case ICloudAccountNotAvailable
+    case ZonesNotCreated
 }
 
 public final class Cloud {
@@ -68,16 +69,17 @@ extension Cloud {
             guard case .available = accountStatus else { throw CloudError.ICloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
             
-        }.then { [weak self] Void -> Promise<Void>? in
+        }.then { [weak self] Void -> Promise<Void> in
             
-            self?.getChangesFromCloud()
+            guard let ego = self else { throw NSError.cancelledError() }
+            return ego.getChangesFromCloud()
             
         }.always {
                 
             dPrint("Cloud >> Syncronization finished.")
                 
         }.catch { error in
-            
+            print("Cloud >x \(error.localizedDescription)")
         }
     }
     
@@ -113,21 +115,28 @@ extension Cloud {
             
             Promise(value: ()).then(on: dispatchQueue) {
                 self.databases.private.fetchAllRecordZones()
-            }.then { recordZone -> Void in
-                dPrint("Cloud >>>> Zone already created, will use it directly.")
+            }.then { recordZones -> Void in
+                guard recordZones.count == self.changeManager.allZoneIDs.count
+                    else { throw CloudError.ZonesNotCreated }
+                dPrint("Cloud >> Zones already created, will use them directly.")
                 Defaults.createdCustomZone = true
                 fullfill(())
-            }.catch { _ in // sadly zone was not created
-                dPrint("Cloud >>>> Zone was not created, will create it now.")
-                let zoneCreationPromises = self.changeManager.allZoneIDs.map {
-                    return self.databases.private.save(CKRecordZone(zoneID: $0))
-                }
-                when(fulfilled: zoneCreationPromises).then { recordZone -> Void in
-                    dPrint("Cloud >>>> Zone was successfully created.")
-                    Defaults.createdCustomZone = true
-                    fullfill(())
-                }.catch { error in
-                    dPrint("Cloud >>>> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+            }.catch { error in // sadly zone was not created
+                if error == CloudError.ZonesNotCreated {
+                    dPrint("Cloud >> Zones were not created, will create them now.")
+                    let zoneCreationPromises = self.changeManager.allZoneIDs.map {
+                        return self.databases.private.save(CKRecordZone(zoneID: $0))
+                    }
+                    when(fulfilled: zoneCreationPromises).then { recordZone -> Void in
+                        dPrint("Cloud >> Zones were successfully created.")
+                        Defaults.createdCustomZone = true
+                        fullfill(())
+                    }.catch { error in
+                        print("Cloud >> Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                        reject(error)
+                    }
+                } else {
+                    print("Cloud >> \(error.localizedDescription)")
                     reject(error)
                 }
             }
@@ -140,6 +149,7 @@ extension Cloud {
             object: nil,
             queue: OperationQueue.main,
             using: { [weak self] _ in
+                dPrint("Cloud >> Recieved push notification for database change.")
                 guard let ego = self else { return }
                 try? ego.pull()
             })
@@ -157,7 +167,7 @@ extension Cloud {
     private func getChangesFromCloud() -> Promise<Void> {
         return Promise<Void> { [unowned self] fullfill, reject in
             Promise(value: ()).then(on: dispatchQueue) {
-                
+
                 self.fetchChangesInDatabase()
                 
             }.then { zoneIDs in
@@ -170,9 +180,10 @@ extension Cloud {
                 for (id, token) in tokens {
                     Defaults.setZoneChangeToken(to: token, forZoneID: id)
                 }
+                fullfill(())
                 
             }.catch { error in
-                
+                print("Cloud >> \(error.localizedDescription)")
                 reject(error)
                 
             }
@@ -246,6 +257,8 @@ extension Cloud {
             
             dPrint("Cloud >> Fetch zone changes from private database.")
             
+            guard !zoneIDs.isEmpty else { fullfill(([], [], [:])); return }
+            
             var recordsToSave = [CKRecord]()
             var recordsToDelete = [CKRecordID]()
             var lastChangeTokens = [CKRecordZoneID: CKServerChangeToken]()
@@ -307,7 +320,6 @@ extension Cloud {
             operation.savePolicy = .changedKeys
             operation.modifyRecordsCompletionBlock = { [weak self] saved, deleted, error in
                 if let error = error {
-                    
                     self?.retryOperationIfPossible(with: error) {
                         try? self?.push(modification: save, deletion: deletion)
                     }
@@ -352,6 +364,8 @@ extension Cloud {
         }
     }
 }
+
+// MARK: - Persistent
 
 extension Cloud {
     fileprivate enum Defaults {

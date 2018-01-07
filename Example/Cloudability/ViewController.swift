@@ -7,13 +7,89 @@
 //
 
 import UIKit
+import RealmSwift
+import Cloudability
+
+let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
 
 class ViewController: UIViewController {
 
+    let tableView = UITableView()
+    
+    let pilots = try! Realm().objects(Pilot.self)
+    let mobileArmors = try! Realm().objects(MobileArmor.self)
+    let mobileSuits = try! Realm().objects(MobileSuit.self)
+    let battleShips = try! Realm().objects(BattleShip.self)
+    
+    var observations = [NotificationToken]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    } 
+        
+        generateInitialData()
+        observeLists()
+        self.view.addSubview(tableView)
+        tableView.frame = self.view.frame
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.delegate = self
+        tableView.dataSource = self
+        
+        _ = cloud
+    }
+    
+    func generateInitialData() {
+        let realm = try! Realm()
+        
+        let tim = Pilot(name: "Tim", age: 21)
+        let john = Pilot(name: "John", age: 24)
+        let sarah = Pilot(name: "Sarah", age: 30)
+        
+        let gundam = MobileSuit(type: "ZZZ", pilot: tim)
+        let armor = MobileArmor(type: "AAA", numberOfPilotsNeeded: 2, pilots: [john, tim])
+        
+        let battleShip = BattleShip(name: "Ship", msCatapults: 4, mobileSuits: [gundam], mobileArmors: [armor])
+        
+        try? realm.write {
+            realm.add(tim)
+            realm.add(john)
+            realm.add(sarah)
+            realm.add(gundam)
+            realm.add(armor)
+            realm.add(battleShip)
+        }
+    }
+    
+    func observeLists() {
+        self.observations.append(pilots.observe({ [weak self] _ in self?.tableView.reloadData()}))
+        self.observations.append(mobileArmors.observe({ [weak self] _ in self?.tableView.reloadData()}))
+        self.observations.append(mobileSuits.observe({ [weak self] _ in self?.tableView.reloadData()}))
+        self.observations.append(battleShips.observe({ [weak self] _ in self?.tableView.reloadData()}))
+    }
+}
 
+
+extension ViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 4
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        cell.textLabel?.text = {
+            let row = indexPath.row
+            switch row {
+            case 0:
+                return "Pilots: \(pilots.count)"
+            case 1:
+                return "Mobile Armors: \(mobileArmors.count)"
+            case 2:
+                return "Mobile Suits: \(mobileSuits.count)"
+            case 3:
+                return "Battle Ships: \(battleShips.count)"
+            default: return nil
+            }
+        }()
+        return cell
+    }
 }
 
