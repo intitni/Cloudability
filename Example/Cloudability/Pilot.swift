@@ -10,10 +10,21 @@ import Foundation
 import RealmSwift
 import Cloudability
 
-class Pilot: Object, Cloudable {
+class Pilot: Object, Cloudable, TestableObject {
     @objc dynamic var id: String = UUID().uuidString
     override class func primaryKey() -> String? {
         return "id"
+    }
+    
+    var title: String { return name + " " + id }
+    
+    override var description: String {
+        return """
+        Pilot
+        ID: \(id)
+        Name: \(name)
+        Age: \(age)
+        """
     }
     
     @objc dynamic var name = ""

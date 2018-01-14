@@ -18,6 +18,13 @@ internal func dPrint(_ item: @autoclosure () -> Any) {
 typealias ID = String
 
 public extension Realm {
+    static var cloudRealm: Realm {
+        let documentDirectory = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+                                                             appropriateFor: nil, create: false)
+        let url = documentDirectory.appendingPathComponent("cloudability.realm")
+        let conf = Realm.Configuration(fileURL: url, objectTypes: [SyncedEntity.self, PendingRelationship.self])
+        return try! Realm(configuration: conf)
+    }
     
     ///Deletes an CloudableObject from the Realm.
     /// - Warning

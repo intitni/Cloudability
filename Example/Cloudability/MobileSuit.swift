@@ -10,7 +10,7 @@ import Foundation
 import RealmSwift
 import Cloudability
 
-class MobileSuit: Object, Cloudable {
+class MobileSuit: Object, Cloudable, TestableObject {
     @objc dynamic var id: String = UUID().uuidString
     override class func primaryKey() -> String? {
         return "id"
@@ -18,6 +18,19 @@ class MobileSuit: Object, Cloudable {
     
     @objc dynamic var type = ""
     @objc dynamic var pilot: Pilot?
+    
+    var title: String { return type + " " + id }
+    
+    override var description: String {
+        return """
+        Mobile Suit
+        ID: \(id)
+        Type: \(type)
+        
+        ----------
+        Pilot: \(pilot?.description ?? "none")
+        """
+    }
     
     convenience init(type: String, pilot: Pilot) {
         self.init()

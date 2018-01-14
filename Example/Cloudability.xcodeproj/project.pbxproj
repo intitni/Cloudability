@@ -16,6 +16,8 @@
 		13D2853420026045003E2BBA /* ObjectConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */; };
 		13D2853520026045003E2BBA /* ChangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136723021FF3D7A9007AF534 /* ChangeManagerTests.swift */; };
 		13D2853620026045003E2BBA /* CloudTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136723111FF53D5E007AF534 /* CloudTests.swift */; };
+		13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */; };
+		13D2DEBB200B837C000B5DF4 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */; };
 		31CF9D429EDE24D3A920427D /* Pods_Cloudability_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
@@ -55,6 +57,8 @@
 		13D2852A20025FE2003E2BBA /* Cloudability_ExampleTest.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Cloudability_ExampleTest.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		13D2852C20025FE2003E2BBA /* Cloudability_ExampleTests2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloudability_ExampleTests2.swift; sourceTree = "<group>"; };
 		13D2852E20025FE2003E2BBA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
+		13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		157BE5BFEBE066064CF26CFA /* Pods-Cloudability_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		196FBBD2AE35C4B86E3F8298 /* Pods_Cloudability_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		367760927C64A1FE87A863C7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
@@ -162,6 +166,8 @@
 			children = (
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
+				13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */,
+				13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -483,9 +489,11 @@
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				13D2852320021270003E2BBA /* MobileArmor.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
+				13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */,
 				13D2852520021270003E2BBA /* BattleShip.swift in Sources */,
 				13D2852420021270003E2BBA /* MobileSuit.swift in Sources */,
 				13D2852220021270003E2BBA /* Pilot.swift in Sources */,
+				13D2DEBB200B837C000B5DF4 /* DetailViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

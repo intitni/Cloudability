@@ -61,7 +61,7 @@ extension ChangeManager {
     }
     
     func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) {
-        let realm = try! Realm()
+        let realm = Realm.cloudRealm
         let m: [Modification] = modification.map {
                 return Modification(syncedEntity: realm.syncedEntity(withIdentifier: $0.recordID.recordName),
                                     record: $0)
@@ -78,7 +78,7 @@ extension ChangeManager {
     }
     
     func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
-        let realm = try! Realm()
+        let realm = Realm.cloudRealm
         let savedEntities: [SyncedEntity] = saved?
             .flatMap { record in
                 let id = record.recordID.recordName
@@ -105,7 +105,7 @@ extension ChangeManager {
     }
     
     func cleanUp() {
-        let realm = try! Realm()
+        let realm = Realm.cloudRealm
         try? realm.safeWrite(withoutNotifying: collectionObservations) {
             let deletedSyncedEntities = realm.objects(SyncedEntity.self).filter("isDeleted == true")
             let appliedPendingRelationships = realm.objects(SyncedEntity.self).filter("isApplied == true")
@@ -117,26 +117,27 @@ extension ChangeManager {
 
 extension ChangeManager {
     func setupSyncedEntitiesIfNeeded() {
-        let realm = try! Realm()
-        guard realm.objects(SyncedEntity.self).count <= 0 else {
+        let cRealm = Realm.cloudRealm
+        let oRealm = try! Realm()
+        guard cRealm.objects(SyncedEntity.self).count <= 0 else {
             dPrint("ChangeManager >> Synced entities already setup.")
             return
         }
         
         dPrint("ChangeManager >> Setting up synced entities.")
         
-        try? realm.safeWrite(withoutNotifying: collectionObservations) {
-            for schema in realm.schema.objectSchema {
+        try? cRealm.safeWrite(withoutNotifying: collectionObservations) {
+            for schema in cRealm.schema.objectSchema {
                 let objectClass = realmObjectType(forName: schema.className)!
                 guard objectClass is CloudableObject.Type else { continue }
                 let primaryKey = objectClass.primaryKey()!
-                let results = realm.objects(objectClass)
+                let results = oRealm.objects(objectClass)
                 
                 let syncedEntities = results.map {
                     SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
                 }
                 
-                realm.add(syncedEntities)
+                cRealm.add(syncedEntities)
             }
         }
         
@@ -144,7 +145,7 @@ extension ChangeManager {
     }
     
     func detachSyncedEntities() {
-        let realm = try! Realm()
+        let realm = Realm.cloudRealm
         try? realm.safeWrite(withoutNotifying: collectionObservations) {
             _ = realm.syncedEntities.map(realm.delete)
         }
@@ -183,13 +184,14 @@ extension ChangeManager {
     }
     
     func generateUploads(forSpecificType type: CloudableObject.Type? = nil) -> (modification: [CKRecord], deletion: [CKRecordID]) {
-        let realm = try! Realm()
+        let oRealm = try! Realm()
+        let cRealm = Realm.cloudRealm
         
         func syncedEntity(of changeState: [SyncedEntity.ChangeState]) -> [SyncedEntity] {
             if let type = type {
-                return Array(realm.syncedEntities(of: changeState).filter("type == \"\(type.className())\""))
+                return Array(cRealm.syncedEntities(of: changeState).filter("type == \"\(type.className())\""))
             }
-            return Array(realm.syncedEntities(of: changeState))
+            return Array(cRealm.syncedEntities(of: changeState))
         }
         
         let uploadingModificationSyncedEntities = syncedEntity(of: [.new, .changed])
@@ -198,7 +200,7 @@ extension ChangeManager {
         let objectConverter = ObjectConverter()
         
         let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
-            let object = realm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
+            let object = oRealm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
             return (object as? CloudableObject).map(objectConverter.convert)
         }
         
@@ -222,27 +224,31 @@ extension ChangeManager {
     }
     
     private func applyPendingRelationships() {
-        let realm = try! Realm()
-        try? realm.safeWrite(withoutNotifying: collectionObservations) {
-            for relationship in realm.pendingRelationships {
+        let cRealm = Realm.cloudRealm
+        let oRealm = try! Realm()
+        let toBeDeleted = List<PendingRelationship>()
+        try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
+            for relationship in cRealm.pendingRelationships {
                 do {
-                    try realm.apply(relationship)
-                    realm.delete(relationship)
+                    try oRealm.apply(relationship)
+                    toBeDeleted.append(relationship)
                 } catch PendingRelationshipError.partiallyConnected {
                     dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
                 } catch PendingRelationshipError.dataCorrupted {
                     dPrint("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
-                    realm.delete(relationship)
+                    toBeDeleted.append(relationship)
                 } catch {
                     dPrint(error.localizedDescription)
                 }
             }
         }
+        
+        cRealm.delete(toBeDeleted)
     }
     
     /// Update `SyncedEntities`.
     private func handleLocalModification(modification: [CloudableObject]) {
-        let realm = try! Realm()
+        let realm = Realm.cloudRealm
         let mSyncedEntities = modification.map {
             realm.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
         }
@@ -258,37 +264,52 @@ extension ChangeManager {
 
 extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
-        let realm = try! Realm()
-        try? realm.safeWrite(withoutNotifying: collectionObservations) {
+        let oRealm = try! Realm()
+        let cRealm = Realm.cloudRealm
+        try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
             for d in deletion {
                 let syncedEntity = d.syncedEntity
                 let identifier = syncedEntity.identifier
                 let type = realmObjectType(forName: syncedEntity.type)!
-                let object = realm.object(ofType: type, forPrimaryKey: identifier)
+                let object = oRealm.object(ofType: type, forPrimaryKey: identifier)
+                oRealm.add(syncedEntity, update: true)
+                if let object = object as? CloudableObject {
+                    oRealm.delete(object)
+                }
+            }
+        }
+        
+        try? cRealm.safeWrite(withoutNotifying: []) {
+            for d in deletion {
+                let syncedEntity = d.syncedEntity
                 syncedEntity.isDeleted = true
                 syncedEntity.changeState = .synced
-                realm.add(syncedEntity, update: true)
-                if let object = object as? CloudableObject {
-                    realm.delete(object)
-                }
+                cRealm.add(syncedEntity, update: true)
             }
         }
     }
     
     private func writeToDisk(modification: [Modification]) {
-        let realm = try! Realm()
-        try? realm.safeWrite(withoutNotifying: collectionObservations) {
+        let oRealm = try! Realm()
+        let cRealm = Realm.cloudRealm
+        let pendingRelationshipsToBeAdded = List<PendingRelationship>()
+        let syncedEntitiesToBeUpdated = List<SyncedEntity>()
+        try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
             for m in modification {
                 let ckRecord = m.record
                 let (object, pendingRelationships) = ObjectConverter().convert(ckRecord)
                 let syncedEntity = m.syncedEntity
                                 ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
-                
-                realm.add(object, update: true)
-                realm.add(pendingRelationships, update: true)
-                syncedEntity.changeState = .synced
-                realm.add(syncedEntity, update: true)
+                oRealm.add(object, update: true)
+                pendingRelationshipsToBeAdded.append(objectsIn: pendingRelationships)
+                syncedEntitiesToBeUpdated.append(syncedEntity)
             }
+        }
+        
+        try? cRealm.safeWrite(withoutNotifying: []) {
+            cRealm.add(pendingRelationshipsToBeAdded, update: true)
+            syncedEntitiesToBeUpdated.forEach { $0.changeState = .synced }
+            oRealm.add(syncedEntitiesToBeUpdated, update: true)
         }
     }
 }

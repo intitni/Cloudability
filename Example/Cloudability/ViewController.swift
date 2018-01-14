@@ -10,7 +10,12 @@ import UIKit
 import RealmSwift
 import Cloudability
 
-let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
+protocol TestableObject {
+    var description: String { get }
+    var title: String { get }
+}
+
+//let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
 
 class ViewController: UIViewController {
 
@@ -33,12 +38,12 @@ class ViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.delegate = self
         tableView.dataSource = self
-        
-        _ = cloud
     }
     
     func generateInitialData() {
         let realm = try! Realm()
+        let flag = UserDefaults.standard.bool(forKey: "LaunchedOnce")
+        guard flag else { return }
         
         let tim = Pilot(name: "Tim", age: 21)
         let john = Pilot(name: "John", age: 24)
@@ -57,6 +62,8 @@ class ViewController: UIViewController {
             realm.add(armor)
             realm.add(battleShip)
         }
+        
+        UserDefaults.standard.set(true, forKey: "LaunchedOnce")
     }
     
     func observeLists() {
@@ -66,7 +73,6 @@ class ViewController: UIViewController {
         self.observations.append(battleShips.observe({ [weak self] _ in self?.tableView.reloadData()}))
     }
 }
-
 
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -90,6 +96,21 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             }
         }()
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let row = indexPath.row
+        switch row {
+        case 0:
+            present(ListViewController<Pilot>(list: pilots), animated: true, completion: nil)
+        case 1:
+            present(ListViewController<MobileArmor>(list: mobileArmors), animated: true, completion: nil)
+        case 2:
+            present(ListViewController<MobileSuit>(list: mobileSuits), animated: true, completion: nil)
+        case 3:
+            present(ListViewController<BattleShip>(list: battleShips), animated: true, completion: nil)
+        default: return
+        }
     }
 }
 
