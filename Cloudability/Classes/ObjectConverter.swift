@@ -23,7 +23,7 @@ class ObjectConverter {
         for property in propertyList {
             record[property.name] = convert(property, of: object)
         }
-        let realm = try! CloudRealmFactory.create()
+        let realm = Realm.cloudRealm
         record["schemaVersion"] = NSNumber(value: realm.configuration.schemaVersion)
         
         return record

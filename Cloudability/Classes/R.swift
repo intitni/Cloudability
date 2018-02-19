@@ -29,7 +29,7 @@ public extension Realm {
     ///Deletes an CloudableObject from the Realm.
     /// - Warning
     /// This method may only be called during a write transaction.
-    func delete(cloudableObject: CloudableObject) {
+    public func delete(cloudableObject: CloudableObject) {
         let id = cloudableObject.pkProperty
         delete(cloudableObject)
         guard let syncedEntity = object(ofType: SyncedEntity.self, forPrimaryKey: id)

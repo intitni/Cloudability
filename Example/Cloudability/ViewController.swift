@@ -33,7 +33,7 @@ class ViewController: UIViewController {
         
         generateInitialData()
         observeLists()
-        self.view.addSubview(tableView)
+        view.addSubview(tableView)
         tableView.frame = self.view.frame
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.delegate = self
@@ -42,8 +42,8 @@ class ViewController: UIViewController {
     
     func generateInitialData() {
         let realm = try! Realm()
-        let flag = UserDefaults.standard.bool(forKey: "LaunchedOnce")
-        guard flag else { return }
+
+        guard UserDefaults.standard.bool(forKey: "LaunchedOnce") else { return }
         
         let tim = Pilot(name: "Tim", age: 21)
         let john = Pilot(name: "John", age: 24)
@@ -102,13 +102,13 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
         let row = indexPath.row
         switch row {
         case 0:
-            present(ListViewController<Pilot>(list: pilots), animated: true, completion: nil)
+            navigationController?.pushViewController(ListViewController<Pilot>(list: pilots), animated: true)
         case 1:
-            present(ListViewController<MobileArmor>(list: mobileArmors), animated: true, completion: nil)
+            navigationController?.pushViewController(ListViewController<MobileArmor>(list: mobileArmors), animated: true)
         case 2:
-            present(ListViewController<MobileSuit>(list: mobileSuits), animated: true, completion: nil)
+            navigationController?.pushViewController(ListViewController<MobileSuit>(list: mobileSuits), animated: true)
         case 3:
-            present(ListViewController<BattleShip>(list: battleShips), animated: true, completion: nil)
+            navigationController?.pushViewController(ListViewController<BattleShip>(list: battleShips), animated: true)
         default: return
         }
     }
