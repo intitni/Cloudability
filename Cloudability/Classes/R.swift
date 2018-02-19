@@ -38,6 +38,26 @@ public extension Realm {
             if isInWriteTransaction { try commitWrite(withoutNotifying: tokens) }
         }
     }
+    
+    public func enumerateCloudableObjects(_ block: (CloudableObject, CloudableObject.Type) -> Void) {
+        for schema in schema.objectSchema {
+            let objClass = realmObjectType(forName: schema.className)!
+            guard let objectClass = objClass as? CloudableObject.Type else { continue }
+            let objs = objects(objectClass)
+            for obj in objs {
+                block(obj as! CloudableObject, objectClass)
+            }
+        }
+    }
+    
+    public func enumerateCloudableLists(_ block: (Results<Object>, CloudableObject.Type) -> Void) {
+        for schema in schema.objectSchema {
+            let objClass = realmObjectType(forName: schema.className)!
+            guard let objectClass = objClass as? CloudableObject.Type else { continue }
+            let objs = objects(objectClass)
+            block(objs, objectClass)
+        }
+    }
 }
 
 

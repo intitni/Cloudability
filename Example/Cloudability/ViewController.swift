@@ -15,7 +15,7 @@ protocol TestableObject {
     var title: String { get }
 }
 
-//let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
+let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
 
 class ViewController: UIViewController {
 
@@ -38,6 +38,8 @@ class ViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.delegate = self
         tableView.dataSource = self
+        
+        cloud.replaceCloud()
     }
     
     func generateInitialData() {

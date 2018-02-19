@@ -40,7 +40,7 @@ public final class Cloud {
         setupPushNotificationIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
         
-        try? pull() // syncronize at launch
+        pull() // syncronize at launch
         
         resumeLongLivedOperationsIfPossible()
     }
@@ -55,7 +55,7 @@ public final class Cloud {
 extension Cloud {
     
     /// Start syncronization
-    public func pull() throws {
+    public func pull() {
         dPrint("Cloud >> Start pull.")
         
         Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
@@ -83,7 +83,7 @@ extension Cloud {
         }
     }
     
-    func push(modification: [CKRecord], deletion: [CKRecordID]) throws {
+    public func push(modification: [CKRecord], deletion: [CKRecordID]) {
         dPrint("Cloud >> Start push.")
         
         Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
@@ -106,8 +106,13 @@ extension Cloud {
             dPrint("Cloud >> Syncronization finished.")
                 
         }.catch { error in
-            
+            print("Cloud >x \(error.localizedDescription)")
         }
+    }
+    
+    public func replaceCloud() {
+        let uploads = changeManager.readyUploadsForAllCloudableObjects()
+        push(modification: uploads, deletion: [])
     }
     
     func setupCustomZoneIfNeeded() -> Promise<Void> {
@@ -151,7 +156,7 @@ extension Cloud {
             using: { [weak self] _ in
                 dPrint("Cloud >> Recieved push notification for database change.")
                 guard let ego = self else { return }
-                try? ego.pull()
+                ego.pull()
             })
     }
     
@@ -236,7 +241,7 @@ extension Cloud {
             operation.fetchDatabaseChangesCompletionBlock = { [weak self] token, _, error in
                 if let error = error {
                     self?.retryOperationIfPossible(with: error) {
-                        try? self?.pull()
+                        self?.pull()
                     }
                     reject(error)
                     return
@@ -298,7 +303,7 @@ extension Cloud {
             operation.fetchRecordZoneChangesCompletionBlock = { [weak self] error in
                 if let error = error {
                     self?.retryOperationIfPossible(with: error) {
-                        try? self?.pull()
+                        self?.pull()
                     }
                     reject(error)
                     return
@@ -321,7 +326,7 @@ extension Cloud {
             operation.modifyRecordsCompletionBlock = { [weak self] saved, deleted, error in
                 if let error = error {
                     self?.retryOperationIfPossible(with: error) {
-                        try? self?.push(modification: save, deletion: deletion)
+                        self?.push(modification: save, deletion: deletion)
                     }
                     reject(error)
                     return
