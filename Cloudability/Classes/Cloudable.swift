@@ -1,10 +1,3 @@
-//
-//  Cloudable.swift
-//  Cloudability
-//
-//  Created by Shangxin Guo on 03/12/2017.
-//
-
 import Foundation
 import RealmSwift
 import CloudKit

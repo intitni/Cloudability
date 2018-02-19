@@ -1,11 +1,3 @@
-//
-//  SyncedEntity.swift
-//  BestBefore
-//
-//  Created by Shangxin Guo on 30/10/2017.
-//  Copyright © 2017 Inti Guo. All rights reserved.
-//
-
 import RealmSwift
 
 /// SyncedEntity is a reference interface of Object stored locally to ChangeManager,

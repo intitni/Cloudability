@@ -1,22 +1,9 @@
-//
-//  ItemStore.swift
-//  Cloudability
-//
-//  Created by Inti Guo on 11/10/2016.
-//  Copyright © 2016 Inti Guo. All rights reserved.
-//
-
 import Foundation
 import RealmSwift
 
-internal func dPrint(_ item: @autoclosure () -> Any) {
-    #if DEBUG
-        print(item())
-    #endif
-}
-
 typealias ID = String
 
+/// tool methods for Cloudablity.
 public extension Realm {
     static var cloudRealm: Realm {
         let documentDirectory = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
@@ -54,4 +41,9 @@ public extension Realm {
 }
 
 
+internal func dPrint(_ item: @autoclosure () -> Any) {
+    #if DEBUG
+        print(item())
+    #endif
+}
 

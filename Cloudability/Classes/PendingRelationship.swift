@@ -1,11 +1,3 @@
-//
-//  PendingRelationship.swift
-//  BestBefore
-//
-//  Created by Shangxin Guo on 14/11/2017.
-//  Copyright © 2017 Inti Guo. All rights reserved.
-//
-
 import Foundation
 import RealmSwift
 

@@ -2,14 +2,14 @@ PODS:
   - Cloudability (0.1.0):
     - PromiseKit/CloudKit (~> 4.0)
     - RealmSwift
-  - PromiseKit/CloudKit (4.5.1):
+  - PromiseKit/CloudKit (4.5.2):
     - PromiseKit/CorePromise
-  - PromiseKit/CorePromise (4.5.1)
-  - Realm (3.0.2):
-    - Realm/Headers (= 3.0.2)
-  - Realm/Headers (3.0.2)
-  - RealmSwift (3.0.2):
-    - Realm (= 3.0.2)
+  - PromiseKit/CorePromise (4.5.2)
+  - Realm (3.1.1):
+    - Realm/Headers (= 3.1.1)
+  - Realm/Headers (3.1.1)
+  - RealmSwift (3.1.1):
+    - Realm (= 3.1.1)
 
 DEPENDENCIES:
   - Cloudability (from `../`)
@@ -19,11 +19,11 @@ EXTERNAL SOURCES:
     :path: ../
 
 SPEC CHECKSUMS:
-  Cloudability: 3cf22b620409e58fc21ae5f742e583f2fbe384a8
-  PromiseKit: 445dac9b2c3c3b4b31b5f842bc325700b848a8bd
-  Realm: 6f23fd1f178a09342eac21bfa7c2bf4312a7a180
-  RealmSwift: 695393add1b8f9d5fa75dd16e6355cf3935f71e2
+  Cloudability: a2dc991629185e3d296cf74e4ba30d7ab117008d
+  PromiseKit: 743e497a5f505a470d3bbbf4ce0663c1268af0a4
+  Realm: 42d1c38a5b1bbcc828b48a7ce702cb86fc68adf4
+  RealmSwift: d31937ca6a6ee54acde64ec839523c0a3c04924b
 
 PODFILE CHECKSUM: 9c50597ff4a720241ee1490b4ccced546c349b05
 
-COCOAPODS: 1.3.1
+COCOAPODS: 1.4.0.rc.1
