@@ -28,6 +28,7 @@ class BattleShip: Object, Cloudable, TestableObject {
         Battle Ship
         ID: \(id)
         Name: \(name)
+        MS Catapults: \(msCatapults)
         
         ----------
         Mobile Suits: \(mobileSuits)

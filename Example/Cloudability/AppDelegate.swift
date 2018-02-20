@@ -8,6 +8,10 @@
 
 import UIKit
 import RealmSwift
+import Cloudability
+import CloudKit
+
+let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -16,6 +20,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        
+        application.registerForRemoteNotifications()
+        _ = cloud
         
         // excluding Cloudability objects
         Realm.Configuration.defaultConfiguration.objectTypes = [
@@ -26,6 +33,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ]
         
         return true
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        
+        print("Received notification!")
+        
+        let dict = userInfo as! [String: NSObject]
+        
+        guard let _ = CKNotification(fromRemoteNotificationDictionary:dict) as? CKDatabaseNotification else { return }
+        
+        cloud.pull { success in
+            if success {
+                completionHandler(.newData)
+            } else {
+                completionHandler(.failed)
+            }
+        }
+        
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -47,8 +72,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        let realm = try! Realm()
-        realm.deleteAll()
+        
     }
 
 

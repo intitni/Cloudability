@@ -39,31 +39,37 @@ public extension Realm {
         }
     }
     
-    public func enumerateCloudableObjects(_ block: (CloudableObject, CloudableObject.Type) -> Void) {
+    public func enumerateCloudableTypes(_ block: (CloudableObject.Type) -> Void) {
         for schema in schema.objectSchema {
             let objClass = realmObjectType(forName: schema.className)!
             guard let objectClass = objClass as? CloudableObject.Type else { continue }
+            block(objectClass)
+        }
+    }
+    
+    public func enumerateCloudableLists(_ block: (Results<Object>, CloudableObject.Type) -> Void) {
+        enumerateCloudableTypes { objectClass in
             let objs = objects(objectClass)
+            block(objs, objectClass)
+        }
+    }
+    
+    public func enumerateCloudableObjects(_ block: (CloudableObject, CloudableObject.Type) -> Void) {
+        enumerateCloudableLists { objs, objectClass in
             for obj in objs {
                 block(obj as! CloudableObject, objectClass)
             }
         }
     }
-    
-    public func enumerateCloudableLists(_ block: (Results<Object>, CloudableObject.Type) -> Void) {
-        for schema in schema.objectSchema {
-            let objClass = realmObjectType(forName: schema.className)!
-            guard let objectClass = objClass as? CloudableObject.Type else { continue }
-            let objs = objects(objectClass)
-            block(objs, objectClass)
-        }
-    }
 }
 
 
-internal func dPrint(_ item: @autoclosure () -> Any) {
-    #if CLOUDABILITYDEBUG
-        print(item())
-    #endif
+internal func log(_ item: @autoclosure () -> Any) {
+    print(item())
+}
+
+internal func logError(_ item: @autoclosure () -> Any, file: String = #file, function: String = #function, line: Int = #line) {
+    print("\(file).\(function) @line")
+    print(item())
 }
 

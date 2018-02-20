@@ -15,8 +15,6 @@ protocol TestableObject {
     var title: String { get }
 }
 
-let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
-
 class ViewController: UIViewController {
 
     let tableView = UITableView()
@@ -42,7 +40,6 @@ class ViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        cloud.replaceCloud()
     }
     
     func generateInitialData() {

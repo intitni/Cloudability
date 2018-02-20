@@ -89,7 +89,7 @@ extension ChangeManager {
                 return realm.syncedEntity(withIdentifier: recordID.recordName)
             } ?? []
         
-        try? realm.safeWrite() {
+        try? realm.safeWrite {
             for entity in savedEntities {
                 entity.changeState = .synced
                 entity.modifiedTime = Date()
@@ -120,11 +120,11 @@ extension ChangeManager {
         let cRealm = Realm.cloudRealm
         let oRealm = try! Realm()
         guard cRealm.objects(SyncedEntity.self).count <= 0 else {
-            dPrint("ChangeManager >> Synced entities already setup.")
+            log("ChangeManager >> Synced entities already setup.")
             return
         }
         
-        dPrint("ChangeManager >> Setting up synced entities.")
+        log("ChangeManager >> Setting up synced entities.")
         
         try? cRealm.safeWrite() {
             for schema in cRealm.schema.objectSchema {
@@ -141,7 +141,7 @@ extension ChangeManager {
             }
         }
         
-        dPrint("ChangeManager >> All synced entities setup.")
+        log("ChangeManager >> All synced entities setup.")
     }
     
     func detachSyncedEntities() {
@@ -162,11 +162,11 @@ extension ChangeManager {
             let token = results.observe { [weak self] change in
                 switch change {
                 case .initial: break
-                case .error(let e): dPrint(e.localizedDescription)
+                case .error(let e): log(e.localizedDescription)
                     
                 // We should not see any true deletion, soft deletion should be used in Cloudable objects.
                 case let .update(result, _, insertion, modification):
-                    dPrint("ChangeManager >> Change detected.")
+                    log("ChangeManager >> Change detected.")
                     guard let ego = self else { return }
                     
                     /// All insertions and modifications, not marked as soft deleted
@@ -183,18 +183,17 @@ extension ChangeManager {
         }
     }
     
-    func readyUploadsForAllCloudableObjects() -> [CKRecord] {
+    func generateAllUploads() -> (modification: [CKRecord], deletion: [CKRecordID]) {
         let realm = try! Realm()
-        var result = [CKRecord]()
-        
-        realm.enumerateCloudableLists { list, type in
-            let objects = Array(list.map({ $0 as! CloudableObject }))
-            handleLocalModification(modification: objects)
-            let (uploads, _) = generateUploads(forSpecificType: type)
-            result.append(contentsOf: uploads)
+        var modification = [CKRecord]()
+        var deletion = [CKRecordID]()
+        realm.enumerateCloudableTypes { type in
+            let upload = generateUploads(forSpecificType: type)
+            modification.append(contentsOf: upload.modification)
+            deletion.append(contentsOf: upload.deletion)
         }
         
-        return result
+        return (modification, deletion)
     }
     
     func generateUploads(forSpecificType type: CloudableObject.Type? = nil) -> (modification: [CKRecord], deletion: [CKRecordID]) {
@@ -227,13 +226,13 @@ extension ChangeManager {
     
     /// Write modifications and deletions to disk.
     private func writeToDisk(modification: [Modification], deletion: [Deletion]) {
-        dPrint("ChangeManager >> Writing deletions.")
+        log("ChangeManager >> Writing deletions.")
         writeToDisk(deletion: deletion)
         
-        dPrint("ChangeManager >> Writing modifications.")
+        log("ChangeManager >> Writing modifications.")
         writeToDisk(modification: modification)
         
-        dPrint("ChangeManager >> Writing relationships.")
+        log("ChangeManager >> Writing relationships.")
         applyPendingRelationships()
     }
     
@@ -251,12 +250,12 @@ extension ChangeManager {
                 }
                 toBeDeleted.append(relationship)
             } catch PendingRelationshipError.partiallyConnected {
-                dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                log("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
             } catch PendingRelationshipError.dataCorrupted {
-                dPrint("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                log("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
                 toBeDeleted.append(relationship)
             } catch {
-                dPrint(error.localizedDescription)
+                logError(error.localizedDescription)
             }
         }
         
