@@ -62,7 +62,7 @@ public extension Realm {
 
 
 internal func dPrint(_ item: @autoclosure () -> Any) {
-    #if DEBUG
+    #if CLOUDABILITYDEBUG
         print(item())
     #endif
 }

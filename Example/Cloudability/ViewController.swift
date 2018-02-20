@@ -38,23 +38,25 @@ class ViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.delegate = self
         tableView.dataSource = self
-        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         cloud.replaceCloud()
     }
     
     func generateInitialData() {
-        let realm = try! Realm()
-
-        guard UserDefaults.standard.bool(forKey: "LaunchedOnce") else { return }
+        guard !UserDefaults.standard.bool(forKey: "LaunchedOnce") else { return }
         
+        let realm = try! Realm()
         let tim = Pilot(name: "Tim", age: 21)
         let john = Pilot(name: "John", age: 24)
         let sarah = Pilot(name: "Sarah", age: 30)
         
-        let gundam = MobileSuit(type: "ZZZ", pilot: tim)
-        let armor = MobileArmor(type: "AAA", numberOfPilotsNeeded: 2, pilots: [john, tim])
+        let gundam = MobileSuit(type: "ZZZ")
+        let armor = MobileArmor(type: "AAA", numberOfPilotsNeeded: 2)
         
-        let battleShip = BattleShip(name: "Ship", msCatapults: 4, mobileSuits: [gundam], mobileArmors: [armor])
+        let battleShip = BattleShip(name: "Ship", msCatapults: 4)
         
         try? realm.write {
             realm.add(tim)
@@ -63,6 +65,13 @@ class ViewController: UIViewController {
             realm.add(gundam)
             realm.add(armor)
             realm.add(battleShip)
+            
+            gundam.pilot = tim
+            
+            armor.pilots.append(objectsIn: [john, tim])
+            
+            battleShip.mobileSuits.append(gundam)
+            battleShip.mobileArmors.append(armor)
         }
         
         UserDefaults.standard.set(true, forKey: "LaunchedOnce")

@@ -241,23 +241,30 @@ extension ChangeManager {
         let cRealm = Realm.cloudRealm
         let oRealm = try! Realm()
         let toBeDeleted = List<PendingRelationship>()
-        try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
-            for relationship in cRealm.pendingRelationships {
-                do {
+        for relationship in cRealm.pendingRelationships {
+            do {
+                try oRealm.safeWrite(withoutNotifying: collectionObservations) {
                     try oRealm.apply(relationship)
-                    toBeDeleted.append(relationship)
-                } catch PendingRelationshipError.partiallyConnected {
-                    dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
-                } catch PendingRelationshipError.dataCorrupted {
-                    dPrint("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
-                    toBeDeleted.append(relationship)
-                } catch {
-                    dPrint(error.localizedDescription)
                 }
+                try cRealm.safeWrite {
+                    relationship.isApplied = true
+                }
+                toBeDeleted.append(relationship)
+            } catch PendingRelationshipError.partiallyConnected {
+                dPrint("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+            } catch PendingRelationshipError.dataCorrupted {
+                dPrint("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                toBeDeleted.append(relationship)
+            } catch {
+                dPrint(error.localizedDescription)
             }
         }
         
-        cRealm.delete(toBeDeleted)
+        
+        try? cRealm.safeWrite {
+            cRealm.delete(toBeDeleted)
+        }
+        
     }
     
     /// Update `SyncedEntities`.
@@ -323,7 +330,7 @@ extension ChangeManager {
         try? cRealm.safeWrite() {
             cRealm.add(pendingRelationshipsToBeAdded, update: true)
             syncedEntitiesToBeUpdated.forEach { $0.changeState = .synced }
-            oRealm.add(syncedEntitiesToBeUpdated, update: true)
+            cRealm.add(syncedEntitiesToBeUpdated, update: true)
         }
     }
 }

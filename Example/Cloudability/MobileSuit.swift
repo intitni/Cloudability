@@ -32,9 +32,8 @@ class MobileSuit: Object, Cloudable, TestableObject {
         """
     }
     
-    convenience init(type: String, pilot: Pilot) {
+    convenience init(type: String) {
         self.init()
         self.type = type
-        self.pilot = pilot
     }
 }

@@ -37,11 +37,9 @@ class BattleShip: Object, Cloudable, TestableObject {
         """
     }
     
-    convenience init(name: String, msCatapults: Int, mobileSuits: [MobileSuit], mobileArmors: [MobileArmor]) {
+    convenience init(name: String, msCatapults: Int) {
         self.init()
         self.name = name
         self.msCatapults = msCatapults
-        self.mobileSuits.append(objectsIn: mobileSuits)
-        self.mobileArmors.append(objectsIn: mobileArmors)
     }
 }

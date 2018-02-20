@@ -82,7 +82,5 @@ extension Realm {
             guard let target = objectFetcher(id) else { throw PendingRelationshipError.partiallyConnected }
             object[property.name] = target
         }
-        
-        pendingRelationship.isApplied = true
     }
 }

@@ -23,7 +23,7 @@ class ObjectConverter {
         for property in propertyList {
             record[property.name] = convert(property, of: object)
         }
-        let realm = Realm.cloudRealm
+        let realm = try! Realm()
         record["schemaVersion"] = NSNumber(value: realm.configuration.schemaVersion)
         
         return record
@@ -130,10 +130,11 @@ class ObjectConverter {
                 return object.pkProperty as CKRecordValue
             } else {
                 let className = property.objectClassName!
-                let ownerType = realmObjectType(forName: className)!
+                let targetType = realmObjectType(forName: className)!
                 let list = object.dynamicList(property.name)
-                guard let ownerPrimaryKey = ownerType.primaryKey() else { return nil }
-                let ids = list.flatMap { $0.value(forKey: ownerPrimaryKey) as? String }
+                guard let targetPrimaryKey = targetType.primaryKey() else { return nil }
+                let ids = list.flatMap { $0.value(forKey: targetPrimaryKey) as? String }
+                if ids.isEmpty { return nil }
                 return ids as NSArray
             }
         case .linkingObjects: return nil

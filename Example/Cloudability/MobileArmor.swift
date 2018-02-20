@@ -34,10 +34,9 @@ class MobileArmor: Object, Cloudable, TestableObject {
         """
     }
     
-    convenience init(type: String, numberOfPilotsNeeded: Int, pilots: [Pilot]) {
+    convenience init(type: String, numberOfPilotsNeeded: Int) {
         self.init()
         self.type = type
         self.numberOfPilotsNeeded = numberOfPilotsNeeded
-        self.pilots.append(objectsIn: pilots)
     }
 }
