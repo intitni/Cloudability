@@ -1,11 +1,3 @@
-//
-//  OhListViewController.swift
-//  Cloudability_Example
-//
-//  Created by Shangxin Guo on 14/01/2018.
-//  Copyright © 2018 CocoaPods. All rights reserved.
-//
-
 import UIKit
 import RealmSwift
 import Cloudability
@@ -44,10 +36,92 @@ class ListViewController<ObjectType: CloudableObject & TestableObject>: UIViewCo
     
     @objc func handleAddButtonTap() {
         switch ObjectType.self {
-        case is Pilot.Type: break
-        case is MobileArmor.Type: break
-        case is MobileSuit.Type: break
-        case is BattleShip.Type: break
+        case is Pilot.Type:
+            let alert = UIAlertController(title: "Add Pilot", message: nil, preferredStyle: .alert)
+            alert.addTextField {
+                $0.accessibilityLabel = "name"
+                $0.placeholder = "name"
+            }
+            alert.addTextField {
+                $0.accessibilityLabel = "age"
+                $0.placeholder = "age"
+                $0.keyboardType = .numberPad
+            }
+            let save = UIAlertAction(title: "Add", style: .default) { action in
+                guard let name = alert.textFields?.filter({ $0.accessibilityLabel == "name" }).first,
+                    let age = alert.textFields?.filter({ $0.accessibilityLabel == "age" }).first,
+                    let n = name.text, let a = Int(age.text ?? ""), !n.isEmpty else { return }
+                let pilot = Pilot(name: n, age: a)
+                let realm = try! Realm()
+                try? realm.write {
+                    realm.add(pilot)
+                }
+            }
+            alert.addAction(save)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        case is MobileArmor.Type:
+            let alert = UIAlertController(title: "Add Mobile Armor", message: nil, preferredStyle: .alert)
+            alert.addTextField {
+                $0.accessibilityLabel = "number"
+                $0.placeholder = "number of pilots needed"
+                $0.keyboardType = .numberPad
+            }
+            alert.addTextField {
+                $0.accessibilityLabel = "type"
+                $0.placeholder = "type"
+            }
+            let save = UIAlertAction(title: "Add", style: .default) { action in
+                guard let number = alert.textFields?.filter({ $0.accessibilityLabel == "number" }).first,
+                    let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
+                    let t = type.text, let n = Int(number.text ?? ""), !t.isEmpty else { return }
+                let armor = MobileArmor(type: t, numberOfPilotsNeeded: n)
+                let realm = try! Realm()
+                try? realm.write {
+                    realm.add(armor)
+                }
+            }
+            alert.addAction(save)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        case is MobileSuit.Type:
+            let alert = UIAlertController(title: "Add Mobile Suit", message: nil, preferredStyle: .alert)
+            alert.addTextField {
+                $0.accessibilityLabel = "type"
+                $0.placeholder = "type"
+            }
+            let save = UIAlertAction(title: "Add", style: .default) { action in
+                guard let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
+                    let t = type.text, !t.isEmpty else { return }
+                let suit = MobileSuit(type: t)
+                let realm = try! Realm()
+                try? realm.write {
+                    realm.add(suit)
+                }
+            }
+            alert.addAction(save)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        case is BattleShip.Type:
+            let alert = UIAlertController(title: "Add Battle Ship", message: nil, preferredStyle: .alert)
+            alert.addTextField {
+                $0.accessibilityLabel = "number"
+                $0.placeholder = "number of catapults"
+                $0.keyboardType = .numberPad
+            }
+            alert.addTextField {
+                $0.accessibilityLabel = "type"
+                $0.placeholder = "name"
+            }
+            let save = UIAlertAction(title: "Add", style: .default) { action in
+                guard let number = alert.textFields?.filter({ $0.accessibilityLabel == "number" }).first,
+                    let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
+                    let t = type.text, let n = Int(number.text ?? ""), !t.isEmpty else { return }
+                let ship = BattleShip(name: t, msCatapults: n)
+                let realm = try! Realm()
+                try? realm.write {
+                    realm.add(ship)
+                }
+            }
+            alert.addAction(save)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         default: break
         }
     }
@@ -75,7 +149,10 @@ class ListViewController<ObjectType: CloudableObject & TestableObject>: UIViewCo
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         guard case .delete = editingStyle else { return }
         let object = list[indexPath.row]
-        try! Realm().delete(cloudableObject: object)
+        let realm = try! Realm()
+        try! realm.write {
+            realm.delete(cloudableObject: object)
+        }
     }
 }
 

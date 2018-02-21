@@ -1,11 +1,3 @@
-//
-//  DetailViewController.swift
-//  Cloudability_Example
-//
-//  Created by Shangxin Guo on 14/01/2018.
-//  Copyright © 2018 CocoaPods. All rights reserved.
-//
-
 import UIKit
 import RealmSwift
 
@@ -45,4 +37,7 @@ class DetailViewController: UIViewController {
         }
     }
 
+    func editPilot() {
+        
+    }
 }

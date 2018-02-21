@@ -74,6 +74,7 @@ extension ChangeManager {
         writeToDisk(modification: m, deletion: d)
     }
     
+    /// Update `SyncedEntity`s after upload finishes.
     func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
         let realm = Realm.cloudRealm
         let savedEntities: [SyncedEntity] = saved?
@@ -105,9 +106,8 @@ extension ChangeManager {
         let realm = Realm.cloudRealm
         try? realm.safeWrite {
             let deletedSyncedEntities = realm.objects(SyncedEntity.self).filter("isDeleted == true")
-            let appliedPendingRelationships = realm.objects(PendingRelationship.self).filter("isApplied == true")
             realm.delete(deletedSyncedEntities)
-            realm.delete(appliedPendingRelationships)
+            realm.delete(realm.pendingRelationshipsToBePurged)
         }
     }
 }
@@ -171,7 +171,7 @@ extension ChangeManager {
                         .filter { $0 < result.count }
                         .map { result[$0] as! CloudableObject }
                     
-                    ego.handleLocalModification(modification: m)
+                    ego.handleHelperObjectChangesDueToLocalModification(modification: m)
                     let uploads = ego.generateUploads(forSpecificType: objectClass)
                     ego.cloud?.push(modification: uploads.modification, deletion: uploads.deletion)
                 }
@@ -244,36 +244,38 @@ extension ChangeManager {
                 }
                 try cRealm.safeWrite {
                     relationship.isApplied = true
+                    relationship.attempts += 1
                 }
                 toBeDeleted.append(relationship)
             } catch PendingRelationshipError.partiallyConnected {
                 log("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                try? cRealm.safeWrite {
+                    relationship.attempts += 1
+                }
             } catch PendingRelationshipError.dataCorrupted {
                 log("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
-                toBeDeleted.append(relationship)
+                try? cRealm.safeWrite {
+                    relationship.isConsideredDead = true
+                }
             } catch {
                 logError(error.localizedDescription)
             }
         }
         
-        
-        try? cRealm.safeWrite {
-            cRealm.delete(toBeDeleted)
-        }
-        
     }
     
-    /// Update `SyncedEntities`.
-    private func handleLocalModification(modification: [CloudableObject]) {
+    /// Update `SyncedEntity`s and `PendingRelationship`s.
+    private func handleHelperObjectChangesDueToLocalModification(modification: [CloudableObject]) {
         let realm = Realm.cloudRealm
         let mSyncedEntities = modification.map {
             realm.syncedEntity(withIdentifier: $0.pkProperty) ?? SyncedEntity(type: $0.recordType, identifier: $0.pkProperty, state: SyncedEntity.ChangeState.new.rawValue)
         }
         
-        try? realm.safeWrite() {
+        try? realm.safeWrite {
             for m in mSyncedEntities {
                 m.changeState = .changed
                 realm.add(m, update: true)
+                realm.sentencePendingRelationshipsToDeath(fromType: m.type, fromIdentifier: m.identifier)
             }
         }
     }

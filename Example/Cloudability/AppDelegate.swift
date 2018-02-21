@@ -1,11 +1,3 @@
-//
-//  AppDelegate.swift
-//  Cloudability
-//
-//  Created by int123c on 12/03/2017.
-//  Copyright (c) 2017 int123c. All rights reserved.
-//
-
 import UIKit
 import RealmSwift
 import Cloudability

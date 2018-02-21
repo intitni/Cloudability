@@ -4,10 +4,18 @@ import RealmSwift
 
 /// `PendingRelationship` is used to mark down the relationships noted in `CKRecord`s,
 /// after all data are fetched from cloud, the newly generated or persisted `PendingRelationship`
-/// will be consumed to set relationship related properties of some objects.
+/// will be used to set relationship related properties of some objects.
 ///
 /// If a `PendingRelationship` can not be applied (when an end of the relationship is not yet there)
 /// the object will be persisted in database, waiting for the next sync.
+///
+/// The primary key of a PendingRelationship is **'fromType-fromIdentifier-propertyName'**, it guarentees that
+/// no one than 1 relationship of a property can exist at the same time.
+///
+/// Whenever the 'from' object changes locally, the `PendingRelationship` will be
+/// sentenced to death if `attempts > 0`. If `attempts > 100`, it will be considered dead.
+///
+/// All dead or applied `PendingRelationship`s will be deleted when neccessary.
 class PendingRelationship: Object {
     @objc dynamic var id: String!
     @objc dynamic var fromType: String! { didSet { setID() } }
@@ -15,7 +23,13 @@ class PendingRelationship: Object {
     @objc dynamic var propertyName: String! { didSet { setID() } }
     @objc dynamic var toType: String!
     var targetIdentifiers = List<String>()
+    @objc dynamic var attempts = 0 {
+        didSet {
+            isConsideredDead = isConsideredDead || attempts > 100
+        }
+    }
     
+    @objc dynamic var isConsideredDead = false
     @objc dynamic var isApplied = false
     
     override class func primaryKey() -> String? { return "id" }
@@ -34,7 +48,20 @@ enum PendingRelationshipError: Error {
 extension Realm {
     
     var pendingRelationships: Results<PendingRelationship> {
-        return objects(PendingRelationship.self)
+        return objects(PendingRelationship.self).filter("isConsideredDead == false && isApplied == false")
+    }
+    
+    var pendingRelationshipsToBePurged: Results<PendingRelationship> {
+        return objects(PendingRelationship.self).filter("isConsideredDead == true || isApplied == true")
+    }
+    
+    /// - Warning
+    /// Must be inside write transaction
+    func sentencePendingRelationshipsToDeath(fromType: String, fromIdentifier: String) {
+        let toDie = pendingRelationships.filter("fromType == \(fromType) && fromIdentifier == \(fromIdentifier)")
+        for t in toDie {
+            t.isConsideredDead = true
+        }
     }
     
     /// - Warning

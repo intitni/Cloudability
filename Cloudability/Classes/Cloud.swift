@@ -36,6 +36,17 @@ public enum ZoneType {
 public final class Cloud {
     internal let changeManager: ChangeManager
     
+    public var enabled = true {
+        didSet {
+            guard enabled != oldValue else { return }
+            if enabled {
+                switchOn()
+            } else {
+                switchOff()
+            }
+        }
+    }
+    
     private(set) var syncing = false
     var cancelled = false
     
@@ -48,6 +59,14 @@ public final class Cloud {
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
         changeManager = ChangeManager(zoneType: zoneType)
         changeManager.cloud = self
+        switchOn()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    func switchOn() {
         changeManager.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
@@ -57,8 +76,8 @@ public final class Cloud {
         resumeLongLivedOperationsIfPossible()
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+    func switchOff() {
+        
     }
 }
 
