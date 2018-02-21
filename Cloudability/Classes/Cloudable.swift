@@ -7,7 +7,7 @@ public typealias CloudableObject = Object & Cloudable
 public protocol Cloudable: class {
     /// Defaultly the `className()`.
     static var recordType: String { get }
-    /// Defaultly the class name of an object.
+    
     var recordType: String { get }
     
     var pkProperty: String { get set }

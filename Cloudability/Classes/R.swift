@@ -5,6 +5,7 @@ typealias ID = String
 
 /// tool methods for Cloudablity.
 public extension Realm {
+    /// Realm to store `SyncedEntity` and `PendingRelationship`.
     static var cloudRealm: Realm {
         let documentDirectory = try! FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
                                                              appropriateFor: nil, create: false)
@@ -13,7 +14,7 @@ public extension Realm {
         return try! Realm(configuration: conf)
     }
     
-    ///Deletes an CloudableObject from the Realm. You should always use this method to delete a CloudableObject so Cloudability can handle the deletion.
+    /// Deletes an CloudableObject from the Realm. You should always use this method to delete a CloudableObject so Cloudability can handle the deletion.
     ///
     /// If you don't want Cloudability to pollute your codes, you are welcome to soft delete your objects so Cloudability can listen to them as modifications.
     ///
@@ -42,7 +43,7 @@ public extension Realm {
                 if isInWriteTransaction { cancelWrite() }
                 throw error
             }
-            if isInWriteTransaction { try commitWrite(withoutNotifying: tokens) }
+            if isInWriteTransaction { try commitWrite(withoutNotifying: tokens) } // if not closed by others
         }
     }
     

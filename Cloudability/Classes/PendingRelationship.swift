@@ -58,7 +58,7 @@ extension Realm {
     /// - Warning
     /// Must be inside write transaction
     func sentencePendingRelationshipsToDeath(fromType: String, fromIdentifier: String) {
-        let toDie = pendingRelationships.filter("fromType == \(fromType) && fromIdentifier == \(fromIdentifier)")
+        let toDie = pendingRelationships.filter("fromType == \"\(fromType)\" && fromIdentifier == \"\(fromIdentifier)\"")
         for t in toDie {
             t.isConsideredDead = true
         }
