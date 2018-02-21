@@ -12,7 +12,7 @@ import PromiseKit
 import RealmSwift
 
 public extension Notification.Name {
-    public static let databaseDidChangeRemotely = Notification.Name(rawValue: "databaseDidChangeRemotely")
+    /// You should listen to this one
     public static let iCloudAccountNotAvailable = Notification.Name(rawValue: "iCloudAccountNotAvailable")
 }
 
@@ -23,9 +23,13 @@ public enum CloudError: Error {
 }
 
 public enum ZoneType {
+    /// Use mutiple zones for each record type.
     case individualForEachRecordType
+    /// Use the defualtZone.
     case defaultZone
+    /// Use 1 custom zone for all record types.
     case sameZone(String)
+    /// Provide a rule that returns a zone ID for each type.
     case customRule((CloudableObject.Type) -> CKRecordZoneID)
 }
 
@@ -39,14 +43,13 @@ public final class Cloud {
     let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     let dispatchQueue = DispatchQueue(label: "com.intii.Cloudability.Cloud", qos: .utility)
     
-    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .individualForEachRecordType) {
+    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .defaultZone) {
         container = containerIdentifier == nil ? CKContainer.default() : CKContainer(identifier: containerIdentifier!)
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
         changeManager = ChangeManager(zoneType: zoneType)
         changeManager.cloud = self
         changeManager.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
-        setupPushNotificationIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
         
         pull() // syncronize at launch
@@ -104,7 +107,11 @@ extension Cloud {
         let uploads = changeManager.generateAllUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
     }
-    
+}
+
+// MARK: - Internal
+
+extension Cloud {
     func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Bool)->Void = { _ in }) {
         log("Cloud >> Start push.")
         
@@ -113,30 +120,30 @@ extension Cloud {
             guard let ego = self else { throw NSError.cancelledError() }
             return ego.container.accountStatus()
             
-        }.then { [weak self] accountStatus -> Promise<Void> in
+            }.then { [weak self] accountStatus -> Promise<Void> in
                 
-            guard let ego = self else { throw NSError.cancelledError() }
-            guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
-            return ego.setupCustomZoneIfNeeded()
+                guard let ego = self else { throw NSError.cancelledError() }
+                guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
+                return ego.setupCustomZoneIfNeeded()
                 
-        }.then { [weak self] Void -> Promise<Void> in
-            
-            guard let ego = self else { throw NSError.cancelledError() }
-            return ego.pushChangesOntoCloud(modification: modification, deletion: deletion)
+            }.then { [weak self] Void -> Promise<Void> in
                 
-        }.then {
-            
-            completionHandler(true)
-            
-        }.always {
+                guard let ego = self else { throw NSError.cancelledError() }
+                return ego.pushChangesOntoCloud(modification: modification, deletion: deletion)
                 
-            log("Cloud >> Push finished.")
+            }.then {
                 
-        }.catch { [weak self] error in
-            
-            logError("Cloud >x \(error.localizedDescription)")
-            self?.handlePushAndPullError(error: error)
-            completionHandler(false)
+                completionHandler(true)
+                
+            }.always {
+                
+                log("Cloud >> Push finished.")
+                
+            }.catch { [weak self] error in
+                
+                logError("Cloud >x \(error.localizedDescription)")
+                self?.handlePushAndPullError(error: error)
+                completionHandler(false)
         }
     }
     
@@ -144,46 +151,38 @@ extension Cloud {
         return Promise { fullfill, reject in
             
             Promise(value: ()).then(on: dispatchQueue) {
+                
                 self.databases.private.fetchAllRecordZones()
-            }.then { recordZones -> Void in
-                guard recordZones.count == self.changeManager.allZoneIDs.count
-                    else { throw CloudError.zonesNotCreated }
-                log("Cloud >> Zones already created, will use them directly.")
-                Defaults.createdCustomZone = true
-                fullfill(())
-            }.catch { error in // sadly zone was not created
-                if error == CloudError.zonesNotCreated {
-                    log("Cloud >> Zones were not created, will create them now.")
-                    let zoneCreationPromises = self.changeManager.allZoneIDs.map {
-                        return self.databases.private.save(CKRecordZone(zoneID: $0))
-                    }
-                    when(fulfilled: zoneCreationPromises).then { recordZone -> Void in
-                        log("Cloud >> Zones were successfully created.")
-                        Defaults.createdCustomZone = true
-                        fullfill(())
-                    }.catch { error in
-                        logError("Cloud >x Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                
+                }.then { recordZones -> Void in
+                    
+                    guard recordZones.count == self.changeManager.allZoneIDs.count
+                        else { throw CloudError.zonesNotCreated }
+                    log("Cloud >> Zones already created, will use them directly.")
+                    Defaults.createdCustomZone = true
+                    fullfill(())
+                    
+                }.catch { error in // sadly zone was not created
+                    
+                    if error == CloudError.zonesNotCreated {
+                        log("Cloud >> Zones were not created, will create them now.")
+                        let zoneCreationPromises = self.changeManager.allZoneIDs.map {
+                            return self.databases.private.save(CKRecordZone(zoneID: $0))
+                        }
+                        when(fulfilled: zoneCreationPromises).then { recordZone -> Void in
+                            log("Cloud >> Zones were successfully created.")
+                            Defaults.createdCustomZone = true
+                            fullfill(())
+                            }.catch { error in
+                                logError("Cloud >x Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                                reject(error)
+                        }
+                    } else {
+                        logError("Cloud >x \(error.localizedDescription)")
                         reject(error)
                     }
-                } else {
-                    logError("Cloud >x \(error.localizedDescription)")
-                    reject(error)
-                }
             }
         }
-    }
-    
-    func setupPushNotificationIfNeeded() {
-        log("Cloud >> Setup push notification observer.")
-        NotificationCenter.default.addObserver(
-            forName: .databaseDidChangeRemotely,
-            object: nil,
-            queue: OperationQueue.main,
-            using: { [weak self] _ in
-                log("Cloud >> Recieved push notification for database change.")
-                guard let ego = self else { return }
-                ego.pull()
-            })
     }
     
     @objc func cleanUp() {
@@ -453,9 +452,11 @@ extension Cloud {
         switch error.code {
         case .zoneBusy, .serviceUnavailable, .requestRateLimited:
             guard let retryAfter = error.userInfo[CKErrorRetryAfterKey] as? Double else { break }
+            log("Cloud >> Retry after \(retryAfter)s.")
             let delay = DispatchTime.now() + retryAfter
             DispatchQueue.main.asyncAfter(deadline: delay, execute: block)
-        default: break
+        default:
+            log("Cloud >> Unable to retry this operation.")
         }
     }
     

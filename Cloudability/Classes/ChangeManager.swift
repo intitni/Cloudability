@@ -103,9 +103,9 @@ extension ChangeManager {
     
     func cleanUp() {
         let realm = Realm.cloudRealm
-        try? realm.safeWrite() {
+        try? realm.safeWrite {
             let deletedSyncedEntities = realm.objects(SyncedEntity.self).filter("isDeleted == true")
-            let appliedPendingRelationships = realm.objects(SyncedEntity.self).filter("isApplied == true")
+            let appliedPendingRelationships = realm.objects(PendingRelationship.self).filter("isApplied == true")
             realm.delete(deletedSyncedEntities)
             realm.delete(appliedPendingRelationships)
         }

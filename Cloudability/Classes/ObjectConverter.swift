@@ -17,7 +17,7 @@ func realmObjectType(forName name: String) -> Object.Type? {
 class ObjectConverter {
     let zoneType: ZoneType
     
-    init(zoneType: ZoneType = .individualForEachRecordType) {
+    init(zoneType: ZoneType) {
         self.zoneType = zoneType
     }
     
