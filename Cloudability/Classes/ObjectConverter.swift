@@ -15,9 +15,35 @@ func realmObjectType(forName name: String) -> Object.Type? {
 }
 
 class ObjectConverter {
+    let zoneType: ZoneType
+    
+    init(zoneType: ZoneType = .individualForEachRecordType) {
+        self.zoneType = zoneType
+    }
+    
+    func zoneID(for objectType: CloudableObject.Type) -> CKRecordZoneID {
+        switch zoneType {
+        case .individualForEachRecordType:
+            return CKRecordZoneID(zoneName: objectType.recordType, ownerName: CKCurrentUserDefaultName)
+        case .customRule(let rule):
+            return rule(objectType)
+        case .defaultZone:
+            return CKRecordZone.default().zoneID
+        case .sameZone(let name):
+            return CKRecordZoneID(zoneName: name, ownerName: CKCurrentUserDefaultName)
+        }
+    }
+    
+    func recordID(for object: CloudableObject) -> CKRecordID {
+        let className = object.className
+        let objClass = realmObjectType(forName: className)!
+        let objectClass = objClass as! CloudableObject.Type
+        return CKRecordID(recordName: object.pkProperty, zoneID: zoneID(for: objectClass))
+    }
+    
     func convert(_ object: CloudableObject) -> CKRecord {
         let propertyList = object.objectSchema.properties
-        let recordID = object.recordID
+        let recordID = self.recordID(for: object)
         let record = CKRecord(recordType: object.recordType, recordID: recordID)
         
         for property in propertyList {

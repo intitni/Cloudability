@@ -28,8 +28,13 @@ class ChangeManager {
     weak var cloud: Cloud?
     
     var collectionObservations = [NotificationToken]()
+    let zoneType: ZoneType
+    var objectConverter: ObjectConverter {
+        return .init(zoneType: zoneType)
+    }
     
-    init() {
+    init(zoneType: ZoneType = .individualForEachRecordType) {
+        self.zoneType = zoneType
         validateCloudableObjects()
         setupLocalDatabaseObservations()
     }
@@ -40,14 +45,6 @@ class ChangeManager {
 }
 
 extension ChangeManager {
-    var allZoneIDs: [CKRecordZoneID] {
-        let realm = try! Realm()
-        return realm.schema.objectSchema.flatMap {
-            let objClass = realmObjectType(forName: $0.className)!
-            guard let objectClass = objClass as? CloudableObject.Type else { return nil }
-            return objectClass.zoneID
-        }
-    }
     
     /// Check if CloudableObjects conforms to requirements.
     func validateCloudableObjects() {
@@ -210,15 +207,15 @@ extension ChangeManager {
         let uploadingModificationSyncedEntities = syncedEntity(of: [.new, .changed])
         let uploadingDeletionSyncedEntities = syncedEntity(of: [.deleted])
         
-        let objectConverter = ObjectConverter()
+        let converter = objectConverter
         
         let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
             let object = oRealm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
-            return (object as? CloudableObject).map(objectConverter.convert)
+            return (object as? CloudableObject).map(converter.convert)
         }
         
         let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
-            return CKRecordID(recordName: $0.identifier, zoneID: $0.objectType.zoneID) 
+            return CKRecordID(recordName: $0.identifier, zoneID: converter.zoneID(for: $0.objectType))
         }
         
         return (modification, deletion)
@@ -280,7 +277,29 @@ extension ChangeManager {
             }
         }
     }
-}
+    
+    var allZoneIDs: [CKRecordZoneID] {
+        let realm = try! Realm()
+        switch zoneType {
+        case .individualForEachRecordType:
+            var result = [CKRecordZoneID]()
+            realm.enumerateCloudableTypes { type in
+                result.append(objectConverter.zoneID(for: type))
+            }
+            return result
+        case .customRule(let rule):
+            var result = [CKRecordZoneID]()
+            realm.enumerateCloudableTypes { type in
+                result.append(rule(type))
+            }
+            return result
+        case .defaultZone:
+            return [CKRecordZone.default().zoneID]
+        case .sameZone(let name):
+            return [CKRecordZoneID(zoneName: name, ownerName: CKCurrentUserDefaultName)]
+        }
+    }
+ }
 
 extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
@@ -317,7 +336,7 @@ extension ChangeManager {
         try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
             for m in modification {
                 let ckRecord = m.record
-                let (object, pendingRelationships) = ObjectConverter().convert(ckRecord)
+                let (object, pendingRelationships) = objectConverter.convert(ckRecord)
                 let syncedEntity = m.syncedEntity
                                 ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
                 oRealm.add(object, update: true)

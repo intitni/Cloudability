@@ -13,12 +13,20 @@ import RealmSwift
 
 public extension Notification.Name {
     public static let databaseDidChangeRemotely = Notification.Name(rawValue: "databaseDidChangeRemotely")
+    public static let iCloudAccountNotAvailable = Notification.Name(rawValue: "iCloudAccountNotAvailable")
 }
 
 public enum CloudError: Error {
-    case AlreadySyncing
-    case ICloudAccountNotAvailable
-    case ZonesNotCreated
+    case alreadySyncing
+    case iCloudAccountNotAvailable
+    case zonesNotCreated
+}
+
+public enum ZoneType {
+    case individualForEachRecordType
+    case defaultZone
+    case sameZone(String)
+    case customRule((CloudableObject.Type) -> CKRecordZoneID)
 }
 
 public final class Cloud {
@@ -31,10 +39,10 @@ public final class Cloud {
     let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     let dispatchQueue = DispatchQueue(label: "com.intii.Cloudability.Cloud", qos: .utility)
     
-    public init(containerIdentifier: String? = nil) {
+    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .individualForEachRecordType) {
         container = containerIdentifier == nil ? CKContainer.default() : CKContainer(identifier: containerIdentifier!)
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
-        changeManager = ChangeManager()
+        changeManager = ChangeManager(zoneType: zoneType)
         changeManager.cloud = self
         changeManager.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
@@ -67,7 +75,7 @@ extension Cloud {
         }.then { [weak self] accountStatus -> Promise<Void> in
             
             guard let ego = self else { throw NSError.cancelledError() }
-            guard case .available = accountStatus else { throw CloudError.ICloudAccountNotAvailable }
+            guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
             
         }.then { [weak self] Void -> Promise<Void> in
@@ -83,9 +91,10 @@ extension Cloud {
                 
             log("Cloud >> Pull finished.")
                 
-        }.catch { error in
+        }.catch { [weak self] error in
             
             logError("Cloud >x \(error.localizedDescription)")
+            self?.handlePushAndPullError(error: error)
             completionHandler(false)
         }
     }
@@ -107,7 +116,7 @@ extension Cloud {
         }.then { [weak self] accountStatus -> Promise<Void> in
                 
             guard let ego = self else { throw NSError.cancelledError() }
-            guard case .available = accountStatus else { throw CloudError.ICloudAccountNotAvailable }
+            guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
                 
         }.then { [weak self] Void -> Promise<Void> in
@@ -123,9 +132,10 @@ extension Cloud {
                 
             log("Cloud >> Push finished.")
                 
-        }.catch { error in
+        }.catch { [weak self] error in
             
             logError("Cloud >x \(error.localizedDescription)")
+            self?.handlePushAndPullError(error: error)
             completionHandler(false)
         }
     }
@@ -137,12 +147,12 @@ extension Cloud {
                 self.databases.private.fetchAllRecordZones()
             }.then { recordZones -> Void in
                 guard recordZones.count == self.changeManager.allZoneIDs.count
-                    else { throw CloudError.ZonesNotCreated }
+                    else { throw CloudError.zonesNotCreated }
                 log("Cloud >> Zones already created, will use them directly.")
                 Defaults.createdCustomZone = true
                 fullfill(())
             }.catch { error in // sadly zone was not created
-                if error == CloudError.ZonesNotCreated {
+                if error == CloudError.zonesNotCreated {
                     log("Cloud >> Zones were not created, will create them now.")
                     let zoneCreationPromises = self.changeManager.allZoneIDs.map {
                         return self.databases.private.save(CKRecordZone(zoneID: $0))
@@ -445,6 +455,14 @@ extension Cloud {
             guard let retryAfter = error.userInfo[CKErrorRetryAfterKey] as? Double else { break }
             let delay = DispatchTime.now() + retryAfter
             DispatchQueue.main.asyncAfter(deadline: delay, execute: block)
+        default: break
+        }
+    }
+    
+    private func handlePushAndPullError(error: Error) {
+        switch error {
+        case CloudError.iCloudAccountNotAvailable:
+            NotificationCenter.default.post(Notification(name: .iCloudAccountNotAvailable))
         default: break
         }
     }

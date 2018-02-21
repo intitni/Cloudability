@@ -5,20 +5,17 @@ import CloudKit
 public typealias CloudableObject = Object & Cloudable
 
 public protocol Cloudable: class {
-    
-    static var zoneID: CKRecordZoneID { get }
-    var zoneID: CKRecordZoneID { get }
-    
     /// Defaultly the `className()`.
     static var recordType: String { get }
     /// Defaultly the class name of an object.
     var recordType: String { get }
     
-    var recordID: CKRecordID { get }
     var pkProperty: String { get set }
 }
 
 extension Cloudable where Self: Object  {
+    var className: String { return Self.className() }
+    
     public static var recordType: String {
         return className()
     }
@@ -37,18 +34,6 @@ extension Cloudable where Self: Object  {
         }
         
         return primaryKeyProperty.name
-    }
-    
-    public static var zoneID: CKRecordZoneID {
-        return CKRecordZoneID(zoneName: recordType, ownerName: CKCurrentUserDefaultName)
-    }
-    
-    public var zoneID: CKRecordZoneID {
-        return Self.zoneID
-    }
-    
-    public var recordID: CKRecordID {
-        return CKRecordID(recordName: pkProperty, zoneID: zoneID)
     }
     
     public var pkProperty: String {

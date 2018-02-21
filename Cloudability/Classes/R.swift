@@ -13,15 +13,22 @@ public extension Realm {
         return try! Realm(configuration: conf)
     }
     
-    ///Deletes an CloudableObject from the Realm.
+    ///Deletes an CloudableObject from the Realm. You should always use this method to delete a CloudableObject so Cloudability can handle the deletion.
+    ///
+    /// If you don't want Cloudability to pollute your codes, you are welcome to soft delete your objects so Cloudability can listen to them as modifications.
+    ///
     /// - Warning
     /// This method may only be called during a write transaction.
     public func delete(cloudableObject: CloudableObject) {
         let id = cloudableObject.pkProperty
         delete(cloudableObject)
-        guard let syncedEntity = object(ofType: SyncedEntity.self, forPrimaryKey: id)
-            else { return }
-        syncedEntity.changeState = .deleted
+        
+        let cRealm = Realm.cloudRealm
+        try? cRealm.safeWrite {
+            guard let syncedEntity = cRealm.object(ofType: SyncedEntity.self, forPrimaryKey: id)
+                else { return }
+            syncedEntity.changeState = .deleted
+        }
     }
     
     /// Write that starts transaction only when it's not in transaction.
