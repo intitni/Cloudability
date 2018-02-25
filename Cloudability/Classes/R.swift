@@ -47,6 +47,12 @@ public extension Realm {
         }
     }
     
+    static func objectTypeIsCloudable(_ type: Object.Type) -> Bool {
+        let targetType = realmObjectType(forName: type.className())!
+        guard let _ = targetType as? CloudableObject.Type else { return false }
+        return true
+    }
+    
     public func enumerateCloudableTypes(_ block: (CloudableObject.Type) -> Void) {
         for schema in schema.objectSchema {
             let objClass = realmObjectType(forName: schema.className)!

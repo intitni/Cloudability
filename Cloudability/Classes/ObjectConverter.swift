@@ -75,42 +75,42 @@ class ObjectConverter {
             case .int:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<NSNumber>)?.map({ $0.intValue }) ?? [Int]()
+                    ? (recordValue as? [Int]) ?? [Int]()
                     : isOptional
                         ? recordValue?.int
                         : recordValue?.int ?? 0
             case .bool:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<NSNumber>)?.map({ $0.boolValue }) ?? [Bool]()
+                    ? (recordValue as? [Bool]) ?? [Bool]()
                     : isOptional
                         ? recordValue?.bool
                         : recordValue?.bool ?? false
             case .float:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<NSNumber>)?.map({ $0.floatValue }) ?? [Float]()
+                    ? (recordValue as? [Float]) ?? [Float]()
                     : isOptional
                         ? recordValue?.float
                         : recordValue?.float ?? 0
             case .double:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<NSNumber>)?.map({ $0.doubleValue }) ?? [Double]()
+                    ? (recordValue as? [Double]) ?? [Double]()
                     : isOptional
                         ? recordValue?.double
                         : recordValue?.double ?? 0
             case .string:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<String>) ?? [String]()
+                    ? (recordValue as? [String]) ?? [String]()
                     : isOptional
                     ? recordValue?.string
                     : recordValue?.string ?? ""
             case .data:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<Data>) ?? [Data]()
+                    ? (recordValue as? [Data]) ?? [Data]()
                     : isOptional
                         ? recordValue?.data
                         : recordValue?.data ?? Data()
@@ -119,13 +119,16 @@ class ObjectConverter {
             case .date:
                 object[property.name] =
                     isArray
-                    ? (recordValue as? Array<Data>) ?? [Date]()
+                    ? (recordValue as? [Date]) ?? [Date]()
                     : isOptional
                         ? recordValue?.date
                         : recordValue?.date ?? Date()
                 
             // when things a relationship
             case .object:
+                let className = property.objectClassName!
+                let targetType = realmObjectType(forName: className)!
+                guard let _ = targetType as? CloudableObject.Type else { break }
                 if isArray {
                     guard let recordValue = recordValue else { break }
                     let ids = recordValue.list as! [String]
@@ -166,52 +169,18 @@ class ObjectConverter {
         let isArray = property.isArray
 
         switch property.type {
-        case .int:
-            if isArray {
-                return (value as? [Int])?.map(NSNumber.init(value:)) as NSArray?
-            }
-            return (value as? Int).map(NSNumber.init(value:))
-        case .bool:
-            if isArray {
-                return (value as? [Bool])?.map(NSNumber.init(value:)) as NSArray?
-            }
-            return (value as? Bool).map(NSNumber.init(value:))
-        case .float:
-            if isArray {
-                return (value as? [Float])?.map(NSNumber.init(value:)) as NSArray?
-            }
-            return (value as? Float).map(NSNumber.init(value:))
-        case .double:
-            if isArray {
-                return (value as? [Double])?.map(NSNumber.init(value:)) as NSArray?
-            }
-            return (value as? Double).map(NSNumber.init(value:))
-        case .string:
-            if isArray {
-                return (value as? [String]) as NSArray?
-            }
-            return value as? String as CKRecordValue?
-        case .data:
-            if isArray {
-                return (value as? [Data]) as NSArray?
-            }
-            return (value as? Data).map(NSData.init(data:))
-        case .any:
+        case .int, .bool, .float, .double, .string, .any, .date, .data:
             return value as? CKRecordValue
-        case .date:
-            if isArray {
-                return (value as? [Date]) as NSArray?
-            }
-            return value as? Date as CKRecordValue?
-            
         case .object:
+            let className = property.objectClassName!
+            let targetType = realmObjectType(forName: className)!
+            guard let _ = targetType as? CloudableObject.Type else { return nil }
+            
             if !isArray {
                 guard let object = value as? CloudableObject
                     else { return nil }
                 return object.pkProperty as CKRecordValue
             } else {
-                let className = property.objectClassName!
-                let targetType = realmObjectType(forName: className)!
                 let list = object.dynamicList(property.name)
                 guard let targetPrimaryKey = targetType.primaryKey() else { return nil }
                 let ids = list.flatMap { $0.value(forKey: targetPrimaryKey) as? String }
