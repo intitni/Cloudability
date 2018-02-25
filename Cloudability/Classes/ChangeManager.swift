@@ -300,6 +300,12 @@ extension ChangeManager {
             }
         }
         
+        for m in modification {
+            let ckRecord = m.record
+            let (object, _) = objectConverter.convert(ckRecord)
+            object.afterMergeAction()
+        }
+        
         try? cRealm.safeWrite() {
             cRealm.add(pendingRelationshipsToBeAdded, update: true)
             syncedEntitiesToBeUpdated.forEach { $0.changeState = .synced }
@@ -335,7 +341,6 @@ extension ChangeManager {
                 logError(error.localizedDescription)
             }
         }
-        
     }
 }
 

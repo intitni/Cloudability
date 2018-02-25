@@ -4,13 +4,17 @@ import CloudKit
 
 public typealias CloudableObject = Object & Cloudable
 
-public protocol Cloudable: class {
+public protocol Cloudable: AnyObject {
     /// Defaultly the `className()`.
     static var recordType: String { get }
     
     var recordType: String { get }
     
     var pkProperty: String { get set }
+    
+    var nonSyncedProperties: [String] { get }
+    
+    func afterMergeAction()
 }
 
 extension Cloudable where Self: Object  {
@@ -53,4 +57,8 @@ extension Cloudable where Self: Object  {
             self[propertyName] = id
         }
     }
+    
+    var nonSyncedProperties: [String] { return [] }
+    
+    func afterMergeAction() {}
 }

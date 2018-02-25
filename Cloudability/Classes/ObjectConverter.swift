@@ -45,8 +45,9 @@ class ObjectConverter {
         let propertyList = object.objectSchema.properties
         let recordID = self.recordID(for: object)
         let record = CKRecord(recordType: object.recordType, recordID: recordID)
+        let nonSyncedProperties = object.nonSyncedProperties
         
-        for property in propertyList {
+        for property in propertyList where !nonSyncedProperties.contains(property.name) {
             record[property.name] = convert(property, of: object)
         }
         let realm = try! Realm()
@@ -57,65 +58,75 @@ class ObjectConverter {
     
     func convert(_ record: CKRecord) -> (CloudableObject, [PendingRelationship]) {
         let (recordType, id) = (record.recordType, record.recordID.recordName)
-        let type = realmObjectType(forName: recordType)!
-        let object = type.init() as! CloudableObject
+        let type = realmObjectType(forName: recordType) as! CloudableObject.Type
+        let object = type.init()
         
         var pendingRelationships = [PendingRelationship]()
         object.pkProperty = id
+        let nonSyncedProperties = object.nonSyncedProperties
         
         let propertyList = object.objectSchema.properties
-        for property in propertyList where property.name != type.primaryKey() {
+        for property in propertyList where property.name != type.primaryKey() && !nonSyncedProperties.contains(property.name) {
             let recordValue = record[property.name]
             
             let isOptional = property.isOptional
+            let isArray = property.isArray
             switch property.type {
             case .int:
-                object[property.name] = isOptional
-                    ? recordValue?.int
-                    : recordValue?.int ?? 0
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<NSNumber>)?.map({ $0.intValue }) ?? [Int]()
+                    : isOptional
+                        ? recordValue?.int
+                        : recordValue?.int ?? 0
             case .bool:
-                object[property.name] = isOptional
-                    ? recordValue?.bool
-                    : recordValue?.bool ?? false
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<NSNumber>)?.map({ $0.boolValue }) ?? [Bool]()
+                    : isOptional
+                        ? recordValue?.bool
+                        : recordValue?.bool ?? false
             case .float:
-                object[property.name] = isOptional
-                    ? recordValue?.float
-                    : recordValue?.float ?? 0
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<NSNumber>)?.map({ $0.floatValue }) ?? [Float]()
+                    : isOptional
+                        ? recordValue?.float
+                        : recordValue?.float ?? 0
             case .double:
-                object[property.name] = isOptional
-                    ? recordValue?.double
-                    : recordValue?.double ?? 0
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<NSNumber>)?.map({ $0.doubleValue }) ?? [Double]()
+                    : isOptional
+                        ? recordValue?.double
+                        : recordValue?.double ?? 0
             case .string:
-                object[property.name] = isOptional
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<String>) ?? [String]()
+                    : isOptional
                     ? recordValue?.string
                     : recordValue?.string ?? ""
             case .data:
-                object[property.name] = isOptional
-                    ? recordValue?.data
-                    : recordValue?.data ?? Data()
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<Data>) ?? [Data]()
+                    : isOptional
+                        ? recordValue?.data
+                        : recordValue?.data ?? Data()
             case .any:
                 object[property.name] = recordValue
             case .date:
-                object[property.name] = isOptional
-                    ? recordValue?.date
-                    : recordValue?.date ?? Date()
+                object[property.name] =
+                    isArray
+                    ? (recordValue as? Array<Data>) ?? [Date]()
+                    : isOptional
+                        ? recordValue?.date
+                        : recordValue?.date ?? Date()
                 
             // when things a relationship
             case .object:
-                if !property.isArray {
-                    let relationship: PendingRelationship = {
-                        let p = PendingRelationship()
-                        p.fromType = recordType
-                        p.fromIdentifier = id
-                        p.toType = property.objectClassName!
-                        p.propertyName = property.name
-                        if let id = recordValue?.string {
-                            p.targetIdentifiers.append(id)
-                        }
-                        return p
-                    }()
-                    pendingRelationships.append(relationship)
-                } else {
+                if isArray {
                     guard let recordValue = recordValue else { break }
                     let ids = recordValue.list as! [String]
                     let relationship: PendingRelationship = {
@@ -128,7 +139,21 @@ class ObjectConverter {
                         return p
                     }()
                     pendingRelationships.append(relationship)
+                } else {
+                    let relationship: PendingRelationship = {
+                        let p = PendingRelationship()
+                        p.fromType = recordType
+                        p.fromIdentifier = id
+                        p.toType = property.objectClassName!
+                        p.propertyName = property.name
+                        if let id = recordValue?.string {
+                            p.targetIdentifiers.append(id)
+                        }
+                        return p
+                    }()
+                    pendingRelationships.append(relationship)
                 }
+                
             case .linkingObjects: break // ignored
             }
         }
@@ -139,6 +164,7 @@ class ObjectConverter {
     private func convert(_ property: Property, of object: Object) -> CKRecordValue? {
         guard let value = object.value(forKey: property.name) else { return nil }
         
+
         switch property.type {
         case .int:    return (value as? Int).map(NSNumber.init(value:))
         case .bool:   return (value as? Bool).map(NSNumber.init(value:))
