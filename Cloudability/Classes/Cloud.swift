@@ -24,10 +24,10 @@ public enum CloudError: Error {
 }
 
 public enum ZoneType {
-    /// Use mutiple zones for each record type.
-    case individualForEachRecordType
     /// Use the defualtZone.
     case defaultZone
+    /// Use mutiple zones for each record type.
+    case individualForEachRecordType
     /// Use 1 custom zone for all record types.
     case sameZone(String)
     /// Provide a rule that returns a zone ID for each type.
