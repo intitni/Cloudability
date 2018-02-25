@@ -163,20 +163,49 @@ class ObjectConverter {
     
     private func convert(_ property: Property, of object: Object) -> CKRecordValue? {
         guard let value = object.value(forKey: property.name) else { return nil }
-        
+        let isArray = property.isArray
 
         switch property.type {
-        case .int:    return (value as? Int).map(NSNumber.init(value:))
-        case .bool:   return (value as? Bool).map(NSNumber.init(value:))
-        case .float:  return (value as? Float).map(NSNumber.init(value:))
-        case .double: return (value as? Double).map(NSNumber.init(value:))
-        case .string: return value as? String as CKRecordValue?
-        case .data:   return (value as? Data).map(NSData.init(data:))
-        case .any:    return value as? CKRecordValue
-        case .date:   return value as? Date as CKRecordValue?
+        case .int:
+            if isArray {
+                return (value as? [Int])?.map(NSNumber.init(value:)) as NSArray?
+            }
+            return (value as? Int).map(NSNumber.init(value:))
+        case .bool:
+            if isArray {
+                return (value as? [Bool])?.map(NSNumber.init(value:)) as NSArray?
+            }
+            return (value as? Bool).map(NSNumber.init(value:))
+        case .float:
+            if isArray {
+                return (value as? [Float])?.map(NSNumber.init(value:)) as NSArray?
+            }
+            return (value as? Float).map(NSNumber.init(value:))
+        case .double:
+            if isArray {
+                return (value as? [Double])?.map(NSNumber.init(value:)) as NSArray?
+            }
+            return (value as? Double).map(NSNumber.init(value:))
+        case .string:
+            if isArray {
+                return (value as? [String]) as NSArray?
+            }
+            return value as? String as CKRecordValue?
+        case .data:
+            if isArray {
+                return (value as? [Data]) as NSArray?
+            }
+            return (value as? Data).map(NSData.init(data:))
+        case .any:
+            return value as? CKRecordValue
+        case .date:
+            if isArray {
+                return (value as? [Date]) as NSArray?
+            }
+            return value as? Date as CKRecordValue?
             
         case .object:
-            if !property.isArray {
+            if !isArray {
                 guard let object = value as? CloudableObject
                     else { return nil }
                 return object.pkProperty as CKRecordValue
