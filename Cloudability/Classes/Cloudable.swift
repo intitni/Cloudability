@@ -58,7 +58,7 @@ extension Cloudable where Self: Object  {
         }
     }
     
-    var nonSyncedProperties: [String] { return [] }
+    public var nonSyncedProperties: [String] { return [] }
     
-    func afterMergeAction() {}
+    public func afterMergeAction() {}
 }

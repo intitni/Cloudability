@@ -11,6 +11,7 @@ import RealmSwift
 import Cloudability
 
 class MobileArmor: Object, Cloudable, TestableObject {
+    
     @objc dynamic var id: String = UUID().uuidString
     override class func primaryKey() -> String? {
         return "id"

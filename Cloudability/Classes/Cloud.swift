@@ -20,6 +20,7 @@ public enum CloudError: Error {
     case alreadySyncing
     case iCloudAccountNotAvailable
     case zonesNotCreated
+    case cancel
 }
 
 public enum ZoneType {
@@ -82,27 +83,27 @@ extension Cloud {
     public func pull(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
         log("Cloud >> Start pull.")
         
-        Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
+        Promise().then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
             
-            guard let ego = self else { throw NSError.cancelledError() }
+            guard let ego = self else { throw CloudError.cancel }
             return ego.container.accountStatus()
             
         }.then { [weak self] accountStatus -> Promise<Void> in
             
-            guard let ego = self else { throw NSError.cancelledError() }
+            guard let ego = self else { throw CloudError.cancel }
             guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
             
         }.then { [weak self] Void -> Promise<Void> in
             
-            guard let ego = self else { throw NSError.cancelledError() }
+            guard let ego = self else { throw CloudError.cancel }
             return ego.getChangesFromCloud()
             
-        }.then {
+        }.done {
             
             completionHandler(true)
             
-        }.always {
+        }.ensure {
                 
             log("Cloud >> Pull finished.")
                 
@@ -127,72 +128,72 @@ extension Cloud {
     func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Bool)->Void = { _ in }) {
         log("Cloud >> Start push.")
         
-        Promise(value: ()).then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
+        Promise().then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
             
-            guard let ego = self else { throw NSError.cancelledError() }
+            guard let ego = self else { throw CloudError.cancel }
             return ego.container.accountStatus()
             
-            }.then { [weak self] accountStatus -> Promise<Void> in
-                
-                guard let ego = self else { throw NSError.cancelledError() }
-                guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
-                return ego.setupCustomZoneIfNeeded()
-                
-            }.then { [weak self] Void -> Promise<Void> in
-                
-                guard let ego = self else { throw NSError.cancelledError() }
-                return ego.pushChangesOntoCloud(modification: modification, deletion: deletion)
-                
-            }.then {
-                
-                completionHandler(true)
-                
-            }.always {
-                
-                log("Cloud >> Push finished.")
-                
-            }.catch { [weak self] error in
-                
-                logError("Cloud >x \(error.localizedDescription)")
-                self?.handlePushAndPullError(error: error)
-                completionHandler(false)
+        }.then { [weak self] accountStatus -> Promise<Void> in
+            
+            guard let ego = self else { throw CloudError.cancel }
+            guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
+            return ego.setupCustomZoneIfNeeded()
+            
+        }.then { [weak self] _ -> Promise<Void> in
+            
+            guard let ego = self else { throw CloudError.cancel }
+            return ego.pushChangesOntoCloud(modification: modification, deletion: deletion)
+            
+        }.done {
+            
+            completionHandler(true)
+            
+        }.ensure {
+            
+            log("Cloud >> Push finished.")
+            
+        }.catch { [weak self] error in
+            
+            logError("Cloud >x \(error.localizedDescription)")
+            self?.handlePushAndPullError(error: error)
+            completionHandler(false)
         }
     }
     
     func setupCustomZoneIfNeeded() -> Promise<Void> {
-        return Promise { fullfill, reject in
+        return Promise { seal in
             
-            Promise(value: ()).then(on: dispatchQueue) {
+            Promise().then(on: dispatchQueue) {
                 
                 self.databases.private.fetchAllRecordZones()
                 
-                }.then { recordZones -> Void in
+            }.done { recordZones in
                     
-                    guard recordZones.count == self.changeManager.allZoneIDs.count
-                        else { throw CloudError.zonesNotCreated }
-                    log("Cloud >> Zones already created, will use them directly.")
-                    Defaults.createdCustomZone = true
-                    fullfill(())
+                guard recordZones.count == self.changeManager.allZoneIDs.count
+                    else { throw CloudError.zonesNotCreated }
+                log("Cloud >> Zones already created, will use them directly.")
+                Defaults.createdCustomZone = true
+                seal.fulfill(())
                     
-                }.catch { error in // sadly zone was not created
+            }.catch { error in // sadly zone was not created
                     
-                    if error == CloudError.zonesNotCreated {
-                        log("Cloud >> Zones were not created, will create them now.")
-                        let zoneCreationPromises = self.changeManager.allZoneIDs.map {
-                            return self.databases.private.save(CKRecordZone(zoneID: $0))
-                        }
-                        when(fulfilled: zoneCreationPromises).then { recordZone -> Void in
-                            log("Cloud >> Zones were successfully created.")
-                            Defaults.createdCustomZone = true
-                            fullfill(())
-                            }.catch { error in
-                                logError("Cloud >x Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
-                                reject(error)
-                        }
-                    } else {
-                        logError("Cloud >x \(error.localizedDescription)")
-                        reject(error)
+                if error == CloudError.zonesNotCreated {
+                    log("Cloud >> Zones were not created, will create them now.")
+                    let zoneCreationPromises = self.changeManager.allZoneIDs.map {
+                        return self.databases.private.save(CKRecordZone(zoneID: $0))
                     }
+                    when(fulfilled: zoneCreationPromises).done { recordZone in
+                        log("Cloud >> Zones were successfully created.")
+                        Defaults.createdCustomZone = true
+                        seal.fulfill(())
+                        }.catch { error in
+                            logError("Cloud >x Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                            seal.reject(error)
+                    }
+                } else {
+                    logError("Cloud >x \(error.localizedDescription)")
+                    seal.reject(error)
+                }
             }
         }
     }
@@ -206,8 +207,8 @@ extension Cloud {
 
 extension Cloud {
     private func getChangesFromCloud() -> Promise<Void> {
-        return Promise<Void> { [unowned self] fullfill, reject in
-            Promise(value: ()).then(on: dispatchQueue) {
+        return Promise { [unowned self] seal in
+            Promise().then(on: dispatchQueue) {
 
                 self.fetchChangesInDatabase()
                 
@@ -215,50 +216,50 @@ extension Cloud {
                 
                 self.fetchChanges(from: zoneIDs, in: self.databases.private)
                 
-            }.then { (modification, deletion, tokens) -> Void in
-                
+            }.done {
+                let (modification, deletion, tokens) = $0
                 self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
                 for (id, token) in tokens {
                     Defaults.setZoneChangeToken(to: token, forZoneID: id)
                 }
-                fullfill(())
+                seal.fulfill(())
                 
             }.catch { error in
                 logError("Cloud >x \(error.localizedDescription)")
-                reject(error)
+                seal.reject(error)
                 
             }
         }
     }
     
     private func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecordID]) -> Promise<Void> {
-        return Promise<Void> { [weak self] fullfill, reject in
+        return Promise { [weak self] seal in
             
-            Promise(value: ()).then(on: dispatchQueue) {
+            Promise().then(on: dispatchQueue) {
                 () -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
                 
                 log("Cloud >> Push local changes to cloud.")
-                guard let ego = self else { throw NSError.cancelledError() }
+                guard let ego = self else { throw CloudError.cancel }
                 
                 return ego.pushChanges(to: ego.databases.private, saving: modification, deleting: deletion)
                 
-            }.then { saved, deleted -> Void in
+            }.done { saved, deleted in
                     
                 log("Cloud >> Upload finished.")
-                guard let ego = self else { throw NSError.cancelledError() }
+                guard let ego = self else { throw CloudError.cancel }
                 
                 ego.changeManager.finishUploads(saved: saved, deleted: deleted)
-                fullfill(())
+                seal.fulfill(())
                     
             }.catch { error in
                 logError(error.localizedDescription)
-                reject(error)
+                seal.reject(error)
             }
         }
     }
     
     private func fetchChangesInDatabase() -> Promise<[CKRecordZoneID]> {
-        return Promise { fullfill, reject in
+        return Promise { seal in
             log("Cloud >> Fetch changes in private database.")
             
             var zoneIDs = [CKRecordZoneID]()
@@ -279,12 +280,12 @@ extension Cloud {
                     self?.retryOperationIfPossible(with: error) {
                         self?.pull()
                     }
-                    reject(error)
+                    seal.reject(error)
                     return
                 }
                 
                 Defaults.serverChangeToken = token
-                fullfill(zoneIDs)
+                seal.fulfill(zoneIDs)
             }
             
             operation.qualityOfService = .utility
@@ -294,11 +295,11 @@ extension Cloud {
     
     private func fetchChanges(from zoneIDs: [CKRecordZoneID], in database: CKDatabase)
         -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: [CKRecordZoneID : CKServerChangeToken])> {
-        return Promise { fullfill, reject in
+        return Promise { seal in
             
             log("Cloud >> Fetch zone changes from private database.")
             
-            guard !zoneIDs.isEmpty else { fullfill(([], [], [:])); return }
+            guard !zoneIDs.isEmpty else { seal.fulfill(([], [], [:])); return }
             
             var recordsToSave = [CKRecord]()
             var recordsToDelete = [CKRecordID]()
@@ -329,7 +330,7 @@ extension Cloud {
             
             operation.recordZoneFetchCompletionBlock = { (zoneID, changeToken, _, _, error) in
                 if let error = error {
-                    reject(error)
+                    seal.reject(error)
                     logError("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.serverChangeToken)) database.")
                     return
                 }
@@ -341,11 +342,11 @@ extension Cloud {
                     self?.retryOperationIfPossible(with: error) {
                         self?.pull()
                     }
-                    reject(error)
+                    seal.reject(error)
                     return
                 }
                 
-                fullfill((recordsToSave, recordsToDelete, lastChangeTokens))
+                seal.fulfill((recordsToSave, recordsToDelete, lastChangeTokens))
             }
             
             operation.qualityOfService = .utility
@@ -420,7 +421,7 @@ extension Cloud {
     
     private func pushChanges(to database: CKDatabase, saving save: [CKRecord], deleting deletion: [CKRecordID])
         -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> {
-        return Promise { fullfill, reject in
+        return Promise { seal in
             let operation = CKModifyRecordsOperation(recordsToSave: save, recordIDsToDelete: deletion)
             operation.isLongLived = true
             operation.savePolicy = .changedKeys
@@ -429,11 +430,11 @@ extension Cloud {
                     self?.retryOperationIfPossible(with: error) {
                         self?.push(modification: save, deletion: deletion)
                     }
-                    reject(error)
+                    seal.reject(error)
                     return
                 }
                 
-                fullfill((saved, deleted))
+                seal.fulfill((saved, deleted))
             }
             
             operation.qualityOfService = .utility
