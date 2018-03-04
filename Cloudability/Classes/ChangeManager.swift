@@ -174,6 +174,7 @@ extension ChangeManager {
                     
                     ego.handleHelperObjectChangesDueToLocalModification(modification: m)
                     let uploads = ego.generateUploads(for: objectClass)
+                    guard !uploads.modification.isEmpty || !uploads.deletion.isEmpty else { return }
                     ego.cloud?.push(modification: uploads.modification, deletion: uploads.deletion)
                 }
             }

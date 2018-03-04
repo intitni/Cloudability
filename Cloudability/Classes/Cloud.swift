@@ -64,7 +64,7 @@ public final class Cloud {
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
         
-        pull() // syncronize at launch
+        pull { [weak self] in guard $0 else { return }; self?.push() } // syncronize at launch
         
         resumeLongLivedOperationsIfPossible()
     }
@@ -169,7 +169,7 @@ extension Cloud {
                 
             }.done { recordZones in
                     
-                guard recordZones.count == self.changeManager.allZoneIDs.count
+                guard recordZones.count == self.changeManager.allZoneIDs.count + 1
                     else { throw CloudError.zonesNotCreated }
                 log("Cloud >> Zones already created, will use them directly.")
                 Defaults.createdCustomZone = true
