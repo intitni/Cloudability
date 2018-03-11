@@ -46,10 +46,13 @@ public final class Cloud {
     let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     let dispatchQueue = DispatchQueue(label: "com.intii.Cloudability.Cloud", qos: .utility)
     
-    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .defaultZone) {
+    var finishBlock: ()->Void = {}
+    
+    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .defaultZone, finishBlock: @escaping ()->Void = {}) {
         container = containerIdentifier == nil ? CKContainer.default() : CKContainer(identifier: containerIdentifier!)
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
         changeManager = ChangeManager(zoneType: zoneType)
+        self.finishBlock = finishBlock
         changeManager.cloud = self
     }
     
@@ -103,8 +106,9 @@ extension Cloud {
             
             completionHandler(true)
             
-        }.ensure {
-                
+        }.ensure(on: DispatchQueue.main) { [weak self] in
+            
+            self?.finishBlock()
             log("Cloud >> Pull finished.")
                 
         }.catch { [weak self] error in
