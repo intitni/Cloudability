@@ -63,10 +63,12 @@ public final class Cloud {
     public func switchOn() {
         guard !enabled else { return }
         enabled = true
-        changeManager.setupSyncedEntitiesIfNeeded()
+        dispatchQueue.async {
+            self.changeManager.setupSyncedEntitiesIfNeeded()
+        }
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
-        
+    
         pull { [weak self] in guard $0 else { return }; self?.push() } // syncronize at launch
         
         resumeLongLivedOperationsIfPossible()
@@ -91,13 +93,13 @@ extension Cloud {
             guard let ego = self else { throw CloudError.cancel }
             return ego.container.accountStatus()
             
-        }.then { [weak self] accountStatus -> Promise<Void> in
+        }.then(on: dispatchQueue) { [weak self] accountStatus -> Promise<Void> in
             
             guard let ego = self else { throw CloudError.cancel }
             guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
             
-        }.then { [weak self] Void -> Promise<Void> in
+        }.then(on: dispatchQueue) { [weak self] Void -> Promise<Void> in
             
             guard let ego = self else { throw CloudError.cancel }
             return ego.getChangesFromCloud()
@@ -106,7 +108,7 @@ extension Cloud {
             
             completionHandler(true)
             
-        }.ensure(on: DispatchQueue.main) { [weak self] in
+        }.ensure { [weak self] in
             
             self?.finishBlock()
             log("Cloud >> Pull finished.")
@@ -137,13 +139,13 @@ extension Cloud {
             guard let ego = self else { throw CloudError.cancel }
             return ego.container.accountStatus()
             
-        }.then { [weak self] accountStatus -> Promise<Void> in
+        }.then(on: dispatchQueue) { [weak self] accountStatus -> Promise<Void> in
             
             guard let ego = self else { throw CloudError.cancel }
             guard case .available = accountStatus else { throw CloudError.iCloudAccountNotAvailable }
             return ego.setupCustomZoneIfNeeded()
             
-        }.then { [weak self] _ -> Promise<Void> in
+        }.then(on: dispatchQueue) { [weak self] _ -> Promise<Void> in
             
             guard let ego = self else { throw CloudError.cancel }
             return ego.pushChangesOntoCloud(modification: modification, deletion: deletion)
@@ -165,16 +167,17 @@ extension Cloud {
     }
     
     func setupCustomZoneIfNeeded() -> Promise<Void> {
-        return Promise { seal in
+        return Promise { [unowned self] seal in
             
             Promise().then(on: dispatchQueue) {
                 
-                self.databases.private.fetchAllRecordZones()
+                return self.databases.private.fetchAllRecordZones()
                 
-            }.done { recordZones in
-                    
-                guard recordZones.count == self.changeManager.allZoneIDs.count + 1
-                    else { throw CloudError.zonesNotCreated }
+            }.done(on: dispatchQueue) { recordZones in
+                
+                let existedZones = Set(recordZones.map({ $0.zoneID.zoneName }))
+                let requestedZones = Set(self.changeManager.allZoneIDs.map({ $0.zoneName }))
+                guard existedZones == requestedZones else { throw CloudError.zonesNotCreated }
                 log("Cloud >> Zones already created, will use them directly.")
                 Defaults.createdCustomZone = true
                 seal.fulfill(())
@@ -212,7 +215,7 @@ extension Cloud {
 extension Cloud {
     private func getChangesFromCloud() -> Promise<Void> {
         return Promise { [unowned self] seal in
-            Promise().then(on: dispatchQueue) {
+            Promise().then {
 
                 self.fetchChangesInDatabase()
                 
@@ -220,7 +223,8 @@ extension Cloud {
                 
                 self.fetchChanges(from: zoneIDs, in: self.databases.private)
                 
-            }.done {
+            }.done(on: DispatchQueue.main) {
+                
                 let (modification, deletion, tokens) = $0
                 self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
                 for (id, token) in tokens {
@@ -247,7 +251,7 @@ extension Cloud {
                 
                 return ego.pushChanges(to: ego.databases.private, saving: modification, deleting: deletion)
                 
-            }.done { saved, deleted in
+            }.done(on: DispatchQueue.main) { saved, deleted in
                     
                 log("Cloud >> Upload finished.")
                 guard let ego = self else { throw CloudError.cancel }
@@ -390,22 +394,6 @@ extension Cloud {
             databases.private.add(createSubscriptionOperation)
         }
         
-        if !Defaults.subscribedToPublicDatabase {
-            let createSubscriptionOperation = createDatabaseSubscriptionOperation(subscriptionId: "public")
-            createSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
-                if error == nil {
-                    Defaults.subscribedToPublicDatabase = true
-                    log("Cloud >> Successfully subscribed to public database.")
-                    return
-                }
-                log("Cloud >x Failed to subscribe to public database, may retry later. \(error?.localizedDescription ?? "")")
-                self?.retryOperationIfPossible(with: error) {
-                    self?.subscribeToDatabaseChangesIfNeeded()
-                }
-            }
-            databases.public.add(createSubscriptionOperation)
-        }
-        
         if !Defaults.subscribedToSharedDatabase {
             let createSubscriptionOperation = createDatabaseSubscriptionOperation(subscriptionId: "shared")
             createSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
@@ -457,7 +445,8 @@ extension Cloud {
                         operation.modifyRecordsCompletionBlock = { (_,_,_) in
                             log("Cloud >> Resume modify records operation success!")
                         }
-                        self?.container.add(operation)
+                        // TODO: Crashing here
+                        self?.container.privateCloudDatabase.add(operation)
                     }
                 })
             }
