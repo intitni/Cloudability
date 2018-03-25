@@ -117,15 +117,13 @@ extension ChangeManager {
     func setupSyncedEntitiesIfNeeded() {
         let cRealm = Realm.cloudRealm
         let oRealm = try! Realm()
-        guard cRealm.objects(SyncedEntity.self).count <= 0 else {
-            log("ChangeManager >> Synced entities already setup.")
-            return
-        }
         
         log("ChangeManager >> Setting up synced entities.")
         
         try? cRealm.safeWrite() {
             for schema in cRealm.schema.objectSchema {
+                guard !Defaults.createdSyncedEntity(for: schema) else { continue }
+                defer { Defaults.setCreatedSyncedEntity(for: schema, to: true) }
                 let objectClass = realmObjectType(forName: schema.className)!
                 guard objectClass is CloudableObject.Type else { continue }
                 let primaryKey = objectClass.primaryKey()!
@@ -261,14 +259,20 @@ extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
         let oRealm = try! Realm()
         let cRealm = Realm.cloudRealm
+        let objects: [Object] = deletion.flatMap {
+            let syncedEntity = $0.syncedEntity
+            let identifier = syncedEntity.identifier
+            let type = realmObjectType(forName: syncedEntity.type)!
+            return oRealm.object(ofType: type, forPrimaryKey: identifier)
+        }
+        
+        for o in objects {
+            (o as? HasBeforeDeletionAction)?.beforeDeletion()
+        }
+        
         try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
-            for d in deletion {
-                let syncedEntity = d.syncedEntity
-                let identifier = syncedEntity.identifier
-                let type = realmObjectType(forName: syncedEntity.type)!
-                let object = oRealm.object(ofType: type, forPrimaryKey: identifier)
-                oRealm.add(syncedEntity, update: true)
-                if let object = object as? CloudableObject {
+            for o in objects {
+                if let object = o as? CloudableObject {
                     oRealm.delete(object)
                 }
             }
@@ -289,6 +293,7 @@ extension ChangeManager {
         let cRealm = Realm.cloudRealm
         let pendingRelationshipsToBeAdded = List<PendingRelationship>()
         let syncedEntitiesToBeUpdated = List<SyncedEntity>()
+        var objects = [Object]()
         try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
             for m in modification {
                 let ckRecord = m.record
@@ -296,15 +301,14 @@ extension ChangeManager {
                 let syncedEntity = m.syncedEntity
                                 ?? SyncedEntity(type: ckRecord.recordType, identifier: ckRecord.recordID.recordName, state: 0)
                 oRealm.add(object, update: true)
+                objects.append(object)
                 pendingRelationshipsToBeAdded.append(objectsIn: pendingRelationships)
                 syncedEntitiesToBeUpdated.append(syncedEntity)
             }
         }
         
-        for m in modification {
-            let ckRecord = m.record
-            let (object, _) = objectConverter.convert(ckRecord)
-            object.afterMergeAction()
+        for o in objects {
+            (o as? HasAfterMergeAction)?.afterMerge()
         }
         
         try? cRealm.safeWrite() {
@@ -354,6 +358,22 @@ extension ChangeManager {
             guard let _ = objClass as? CloudableObject.Type else { continue }
             assert(schema.primaryKeyProperty != nil, "\(schema.className) should provide a primary key.")
             assert(schema.primaryKeyProperty!.type == .string, "\(schema.className)'s primary key must be String.")
+        }
+    }
+}
+
+extension ChangeManager {
+    fileprivate enum Defaults {
+        private static let createdSyncedEntityKeyPrefix = "cloudability_created_syncedEntity_"
+        static func createdSyncedEntityKey(for schema: ObjectSchema) -> String {
+            return createdSyncedEntityKeyPrefix + schema.className
+        }
+        static func createdSyncedEntity(for schema: ObjectSchema) -> Bool {
+            return UserDefaults.standard.bool(forKey: createdSyncedEntityKey(for: schema))
+        }
+        
+        static func setCreatedSyncedEntity(for schema: ObjectSchema, to newValue: Bool) {
+            UserDefaults.standard.set(newValue, forKey: createdSyncedEntityKey(for: schema))
         }
     }
 }

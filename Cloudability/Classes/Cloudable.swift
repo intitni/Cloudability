@@ -13,8 +13,14 @@ public protocol Cloudable: AnyObject {
     var pkProperty: String { get set }
     
     var nonSyncedProperties: [String] { get }
-    
-    func afterMergeAction()
+}
+
+public protocol HasAfterMergeAction: AnyObject {
+    func afterMerge()
+}
+
+public protocol HasBeforeDeletionAction: AnyObject {
+    func beforeDeletion()
 }
 
 extension Cloudable where Self: Object  {
@@ -59,6 +65,4 @@ extension Cloudable where Self: Object  {
     }
     
     public var nonSyncedProperties: [String] { return [] }
-    
-    public func afterMergeAction() {}
 }

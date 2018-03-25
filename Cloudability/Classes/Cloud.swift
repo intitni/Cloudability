@@ -76,6 +76,7 @@ public final class Cloud {
     
     public func switchOff() {
         guard enabled else { return }
+        // TODO: Completely disable cloud
         enabled = false
     }
 }
