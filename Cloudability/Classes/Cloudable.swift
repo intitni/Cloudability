@@ -16,11 +16,11 @@ public protocol Cloudable: AnyObject {
 }
 
 public protocol HasAfterMergeAction: AnyObject {
-    func afterMerge()
+    func afterCloudMerge()
 }
 
 public protocol HasBeforeDeletionAction: AnyObject {
-    func beforeDeletion()
+    func beforeCloudDeletion()
 }
 
 extension Cloudable where Self: Object  {

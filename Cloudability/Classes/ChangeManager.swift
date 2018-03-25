@@ -267,7 +267,7 @@ extension ChangeManager {
         }
         
         for o in objects {
-            (o as? HasBeforeDeletionAction)?.beforeDeletion()
+            (o as? HasBeforeDeletionAction)?.beforeCloudDeletion()
         }
         
         try? oRealm.safeWrite(withoutNotifying: collectionObservations) {
@@ -308,7 +308,7 @@ extension ChangeManager {
         }
         
         for o in objects {
-            (o as? HasAfterMergeAction)?.afterMerge()
+            (o as? HasAfterMergeAction)?.afterCloudMerge()
         }
         
         try? cRealm.safeWrite() {
