@@ -35,8 +35,8 @@ public enum ZoneType {
 }
 
 public final class Cloud {
-    internal let changeManager: ChangeManager
-    
+    private var changeManager: ChangeManager?
+    let zoneType: ZoneType
     private(set) public var enabled: Bool = false
     
     private(set) var syncing = false
@@ -49,22 +49,24 @@ public final class Cloud {
     var finishBlock: ()->Void = {}
     
     public init(containerIdentifier: String? = nil, zoneType: ZoneType = .defaultZone, finishBlock: @escaping ()->Void = {}) {
+        self.zoneType = zoneType
         container = containerIdentifier == nil ? CKContainer.default() : CKContainer(identifier: containerIdentifier!)
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
-        changeManager = ChangeManager(zoneType: zoneType)
+        
         self.finishBlock = finishBlock
-        changeManager.cloud = self
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
-    public func switchOn() {
+    public func switchOn() throws {
         guard !enabled else { return }
         enabled = true
+        changeManager = ChangeManager(zoneType: zoneType)
+        changeManager?.cloud = self
         dispatchQueue.async {
-            self.changeManager.setupSyncedEntitiesIfNeeded()
+            self.changeManager?.setupSyncedEntitiesIfNeeded()
         }
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
@@ -76,8 +78,15 @@ public final class Cloud {
     
     public func switchOff() {
         guard enabled else { return }
-        // TODO: Completely disable cloud
         enabled = false
+        changeManager = nil
+        tearDown()
+        unsubscribeToDatabaseChanges()
+    }
+
+    func tearDown() {
+        changeManager?.tearDown()
+        unsubscribeToDatabaseChanges()
     }
 }
 
@@ -124,6 +133,7 @@ extension Cloud {
     
     /// Start push
     public func push(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
+        guard let changeManager = changeManager else { return }
         let uploads = changeManager.generateUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
     }
@@ -169,6 +179,7 @@ extension Cloud {
     
     func setupCustomZoneIfNeeded() -> Promise<Void> {
         return Promise { [unowned self] seal in
+            guard let changeManager = self.changeManager else { seal.reject(CloudError.cancel); return }
             
             Promise().then(on: dispatchQueue) {
                 
@@ -177,7 +188,7 @@ extension Cloud {
             }.done(on: dispatchQueue) { recordZones in
                 
                 let existedZones = Set(recordZones.map({ $0.zoneID.zoneName }))
-                let requestedZones = Set(self.changeManager.allZoneIDs.map({ $0.zoneName }))
+                let requestedZones = Set(changeManager.allZoneIDs.map({ $0.zoneName }))
                 guard existedZones == requestedZones else { throw CloudError.zonesNotCreated }
                 log("Cloud >> Zones already created, will use them directly.")
                 Defaults.createdCustomZone = true
@@ -187,7 +198,7 @@ extension Cloud {
                     
                 if error == CloudError.zonesNotCreated {
                     log("Cloud >> Zones were not created, will create them now.")
-                    let zoneCreationPromises = self.changeManager.allZoneIDs.map {
+                    let zoneCreationPromises = changeManager.allZoneIDs.map {
                         return self.databases.private.save(CKRecordZone(zoneID: $0))
                     }
                     when(fulfilled: zoneCreationPromises).done { recordZone in
@@ -207,7 +218,7 @@ extension Cloud {
     }
     
     @objc func cleanUp() {
-        changeManager.cleanUp()
+        changeManager?.cleanUp()
     }
 }
 
@@ -216,6 +227,8 @@ extension Cloud {
 extension Cloud {
     private func getChangesFromCloud() -> Promise<Void> {
         return Promise { [unowned self] seal in
+            guard let changeManager = self.changeManager else { seal.reject(CloudError.cancel); return }
+            
             Promise().then {
 
                 self.fetchChangesInDatabase()
@@ -227,7 +240,7 @@ extension Cloud {
             }.done(on: DispatchQueue.main) {
                 
                 let (modification, deletion, tokens) = $0
-                self.changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
+                changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
                 for (id, token) in tokens {
                     Defaults.setZoneChangeToken(to: token, forZoneID: id)
                 }
@@ -243,6 +256,7 @@ extension Cloud {
     
     private func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecordID]) -> Promise<Void> {
         return Promise { [weak self] seal in
+            guard let changeManager = self?.changeManager else { seal.reject(CloudError.cancel); return }
             
             Promise().then(on: dispatchQueue) {
                 () -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> in
@@ -255,9 +269,8 @@ extension Cloud {
             }.done(on: DispatchQueue.main) { saved, deleted in
                     
                 log("Cloud >> Upload finished.")
-                guard let ego = self else { throw CloudError.cancel }
                 
-                ego.changeManager.finishUploads(saved: saved, deleted: deleted)
+                changeManager.finishUploads(saved: saved, deleted: deleted)
                 seal.fulfill(())
                     
             }.catch { error in
@@ -412,6 +425,48 @@ extension Cloud {
         }
     }
     
+    private func unsubscribeToDatabaseChanges() {
+        log("Cloud >> Subscribe to database changes.")
+        
+        func removeDatabaseSubscriptionOperation(subscriptionId: String) -> CKModifySubscriptionsOperation {
+            let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [], subscriptionIDsToDelete: [subscriptionId])
+            operation.qualityOfService = .utility
+            return operation
+        }
+        
+        if !Defaults.subscribedToPrivateDatabase {
+            let removeSubscriptionOperation = removeDatabaseSubscriptionOperation(subscriptionId: "private")
+            removeSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+                if error == nil {
+                    Defaults.subscribedToPrivateDatabase = false
+                    log("Cloud >> Successfully unsubscribed to private database.")
+                    return
+                }
+                log("Cloud >x Failed to unsubscribe to private database, may retry later. \(error?.localizedDescription ?? "")")
+                self?.retryOperationIfPossible(with: error) {
+                    self?.unsubscribeToDatabaseChanges()
+                }
+            }
+            databases.private.add(removeSubscriptionOperation)
+        }
+        
+        if Defaults.subscribedToSharedDatabase {
+            let removeSubscriptionOperation = removeDatabaseSubscriptionOperation(subscriptionId: "shared")
+            removeSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+                if error == nil {
+                    Defaults.subscribedToSharedDatabase = false
+                    log("Cloud >> Successfully unsubscribed to shared database.")
+                    return
+                }
+                log("Cloud >x Failed to unsubscribe to shared database, may retry later. \(error?.localizedDescription ?? "")")
+                self?.retryOperationIfPossible(with: error) {
+                    self?.subscribeToDatabaseChangesIfNeeded()
+                }
+            }
+            databases.shared.add(removeSubscriptionOperation)
+        }
+    }
+    
     private func pushChanges(to database: CKDatabase, saving save: [CKRecord], deleting deletion: [CKRecordID])
         -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> {
         return Promise { seal in
@@ -539,11 +594,6 @@ extension Cloud {
         static var subscribedToSharedDatabase: Bool {
             get { return UserDefaults.standard.bool(forKey: subscribedToSharedDatabaseKey) }
             set { UserDefaults.standard.set(newValue, forKey: subscribedToSharedDatabaseKey) }
-        }
-        
-        static var subscribedToPublicDatabase: Bool {
-            get { return UserDefaults.standard.bool(forKey: subscribedToPublicDatabaseKey) }
-            set { UserDefaults.standard.set(newValue, forKey: subscribedToPublicDatabaseKey) }
         }
     }
 }

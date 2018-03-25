@@ -61,6 +61,13 @@ class ChangeManager {
             realm.delete(realm.pendingRelationshipsToBePurged)
         }
     }
+    
+    func tearDown() {
+        let realm = Realm.cloudRealm
+        try? realm.safeWrite {
+            realm.deleteAll()
+        }
+    }
 }
 
 extension ChangeManager {
