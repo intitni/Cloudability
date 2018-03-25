@@ -60,7 +60,7 @@ public final class Cloud {
         NotificationCenter.default.removeObserver(self)
     }
     
-    public func switchOn() throws {
+    public func switchOn() {
         guard !enabled else { return }
         enabled = true
         changeManager = ChangeManager(zoneType: zoneType)
