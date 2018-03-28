@@ -65,9 +65,7 @@ public final class Cloud {
         enabled = true
         changeManager = ChangeManager(zoneType: zoneType)
         changeManager?.cloud = self
-        dispatchQueue.async {
-            self.changeManager?.setupSyncedEntitiesIfNeeded()
-        }
+        changeManager?.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
     
@@ -79,8 +77,8 @@ public final class Cloud {
     public func switchOff() {
         guard enabled else { return }
         enabled = false
-        changeManager = nil
         tearDown()
+        changeManager = nil
         unsubscribeToDatabaseChanges()
     }
 
@@ -379,22 +377,17 @@ extension Cloud {
     private func subscribeToDatabaseChangesIfNeeded() {
         log("Cloud >> Subscribe to database changes.")
         
-        func createDatabaseSubscriptionOperation(subscriptionId: String) -> CKModifySubscriptionsOperation {
+        func createDatabaseSubscription(subscriptionId: String) -> CKDatabaseSubscription {
             let subscription = CKDatabaseSubscription(subscriptionID: subscriptionId)
             let notificationInfo = CKNotificationInfo()
-            
-            // send a silent notification
-            notificationInfo.shouldSendContentAvailable = true
+            notificationInfo.alertBody = "Change"
+            notificationInfo.shouldSendContentAvailable = true // send a silent notification
             subscription.notificationInfo = notificationInfo
-            let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: [])
-            operation.qualityOfService = .utility
-            
-            return operation
+            return subscription
         }
         
         if !Defaults.subscribedToPrivateDatabase {
-            let createSubscriptionOperation = createDatabaseSubscriptionOperation(subscriptionId: "private")
-            createSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+            databases.private.save(createDatabaseSubscription(subscriptionId: "private")) { [weak self] subscription, error in
                 if error == nil {
                     Defaults.subscribedToPrivateDatabase = true
                     log("Cloud >> Successfully subscribed to private database.")
@@ -405,14 +398,12 @@ extension Cloud {
                     self?.subscribeToDatabaseChangesIfNeeded()
                 }
             }
-            databases.private.add(createSubscriptionOperation)
         }
         
         if !Defaults.subscribedToSharedDatabase {
-            let createSubscriptionOperation = createDatabaseSubscriptionOperation(subscriptionId: "shared")
-            createSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+            databases.shared.save(createDatabaseSubscription(subscriptionId: "shared")) { [weak self] subscription, error in
                 if error == nil {
-                    Defaults.subscribedToSharedDatabase = true
+                    Defaults.subscribedToPrivateDatabase = true
                     log("Cloud >> Successfully subscribed to shared database.")
                     return
                 }
@@ -421,22 +412,14 @@ extension Cloud {
                     self?.subscribeToDatabaseChangesIfNeeded()
                 }
             }
-            databases.shared.add(createSubscriptionOperation)
         }
     }
     
     private func unsubscribeToDatabaseChanges() {
         log("Cloud >> Subscribe to database changes.")
         
-        func removeDatabaseSubscriptionOperation(subscriptionId: String) -> CKModifySubscriptionsOperation {
-            let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [], subscriptionIDsToDelete: [subscriptionId])
-            operation.qualityOfService = .utility
-            return operation
-        }
-        
-        if !Defaults.subscribedToPrivateDatabase {
-            let removeSubscriptionOperation = removeDatabaseSubscriptionOperation(subscriptionId: "private")
-            removeSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+        if Defaults.subscribedToPrivateDatabase {
+            databases.private.delete(withSubscriptionID: "private") { [weak self] _, error in
                 if error == nil {
                     Defaults.subscribedToPrivateDatabase = false
                     log("Cloud >> Successfully unsubscribed to private database.")
@@ -447,12 +430,10 @@ extension Cloud {
                     self?.unsubscribeToDatabaseChanges()
                 }
             }
-            databases.private.add(removeSubscriptionOperation)
         }
         
         if Defaults.subscribedToSharedDatabase {
-            let removeSubscriptionOperation = removeDatabaseSubscriptionOperation(subscriptionId: "shared")
-            removeSubscriptionOperation.modifySubscriptionsCompletionBlock = { [weak self] (subscriptions, deletedIds, error) in
+            databases.shared.delete(withSubscriptionID: "shared") { [weak self] _, error in
                 if error == nil {
                     Defaults.subscribedToSharedDatabase = false
                     log("Cloud >> Successfully unsubscribed to shared database.")
@@ -460,10 +441,9 @@ extension Cloud {
                 }
                 log("Cloud >x Failed to unsubscribe to shared database, may retry later. \(error?.localizedDescription ?? "")")
                 self?.retryOperationIfPossible(with: error) {
-                    self?.subscribeToDatabaseChangesIfNeeded()
+                    self?.unsubscribeToDatabaseChanges()
                 }
             }
-            databases.shared.add(removeSubscriptionOperation)
         }
     }
     

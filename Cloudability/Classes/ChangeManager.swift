@@ -63,9 +63,15 @@ class ChangeManager {
     }
     
     func tearDown() {
-        let realm = Realm.cloudRealm
-        try? realm.safeWrite {
-            realm.deleteAll()
+        let oRealm = try! Realm()
+        let cRealm = Realm.cloudRealm
+        try? cRealm.safeWrite {
+            cRealm.deleteAll()
+        }
+        for schema in oRealm.schema.objectSchema {
+            let objectClass = realmObjectType(forName: schema.className)!
+            guard objectClass is CloudableObject.Type else { continue }
+            Defaults.setCreatedSyncedEntity(for: schema, to: false)
         }
     }
 }
@@ -128,7 +134,7 @@ extension ChangeManager {
         log("ChangeManager >> Setting up synced entities.")
         
         try? cRealm.safeWrite() {
-            for schema in cRealm.schema.objectSchema {
+            for schema in oRealm.schema.objectSchema {
                 guard !Defaults.createdSyncedEntity(for: schema) else { continue }
                 defer { Defaults.setCreatedSyncedEntity(for: schema, to: true) }
                 let objectClass = realmObjectType(forName: schema.className)!
@@ -140,18 +146,11 @@ extension ChangeManager {
                     SyncedEntity(type: schema.className, identifier: $0[primaryKey] as! String, state: 0)
                 }
                 
-                cRealm.add(syncedEntities)
+                cRealm.add(syncedEntities, update: true)
             }
         }
         
         log("ChangeManager >> All synced entities setup.")
-    }
-    
-    func detachSyncedEntities() {
-        let realm = Realm.cloudRealm
-        try? realm.safeWrite() {
-            _ = realm.syncedEntities.map(realm.delete)
-        }
     }
     
     /// Observe all Cloudable object lists, for insertions and modifications.
