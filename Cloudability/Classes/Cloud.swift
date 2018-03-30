@@ -48,9 +48,9 @@ public final class Cloud {
     
     var finishBlock: ()->Void = {}
     
-    public init(containerIdentifier: String? = nil, zoneType: ZoneType = .defaultZone, finishBlock: @escaping ()->Void = {}) {
+    public init(container: CKContainer = .default(), zoneType: ZoneType = .defaultZone, finishBlock: @escaping ()->Void = {}) {
         self.zoneType = zoneType
-        container = containerIdentifier == nil ? CKContainer.default() : CKContainer(identifier: containerIdentifier!)
+        self.container = container
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
         
         self.finishBlock = finishBlock
@@ -189,7 +189,6 @@ extension Cloud {
                 let requestedZones = Set(changeManager.allZoneIDs.map({ $0.zoneName }))
                 guard existedZones == requestedZones else { throw CloudError.zonesNotCreated }
                 log("Cloud >> Zones already created, will use them directly.")
-                Defaults.createdCustomZone = true
                 seal.fulfill(())
                     
             }.catch { error in // sadly zone was not created
@@ -201,7 +200,6 @@ extension Cloud {
                     }
                     when(fulfilled: zoneCreationPromises).done { recordZone in
                         log("Cloud >> Zones were successfully created.")
-                        Defaults.createdCustomZone = true
                         seal.fulfill(())
                         }.catch { error in
                             logError("Cloud >x Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
@@ -287,9 +285,9 @@ extension Cloud {
             let operation = CKFetchDatabaseChangesOperation(previousServerChangeToken: Defaults.serverChangeToken)
             operation.fetchAllChanges = true
 
-//            operation.changeTokenUpdatedBlock = { token in
-//                Defaults.serverChangeToken = token
-//            }
+            operation.changeTokenUpdatedBlock = { token in
+                Defaults.serverChangeToken = token
+            }
             
             operation.recordZoneWithIDChangedBlock = { zoneID in
                 zoneIDs.append(zoneID)
@@ -352,9 +350,9 @@ extension Cloud {
                 if let error = error {
                     seal.reject(error)
                     logError("Cloud >>>> Error fetching zone changes for \(String(describing: Defaults.serverChangeToken)) database.")
-                    return
+                } else {
+                    lastChangeTokens[zoneID] = changeToken
                 }
-                lastChangeTokens[zoneID] = changeToken
             }
             
             operation.fetchRecordZoneChangesCompletionBlock = { [weak self] error in
@@ -377,17 +375,10 @@ extension Cloud {
     private func subscribeToDatabaseChangesIfNeeded() {
         log("Cloud >> Subscribe to database changes.")
         
-        func createDatabaseSubscription(subscriptionId: String) -> CKDatabaseSubscription {
-            let subscription = CKDatabaseSubscription(subscriptionID: subscriptionId)
-            let notificationInfo = CKNotificationInfo()
-            notificationInfo.alertBody = "Change"
-            notificationInfo.shouldSendContentAvailable = true // send a silent notification
-            subscription.notificationInfo = notificationInfo
-            return subscription
-        }
+        let operationQueue = OperationQueue()
         
         if !Defaults.subscribedToPrivateDatabase {
-            databases.private.save(createDatabaseSubscription(subscriptionId: "private")) { [weak self] subscription, error in
+            databases.private.addDatabaseSubscription(subscriptionID: "Private", operationQueue: operationQueue) { [weak self] error in
                 if error == nil {
                     Defaults.subscribedToPrivateDatabase = true
                     log("Cloud >> Successfully subscribed to private database.")
@@ -401,7 +392,7 @@ extension Cloud {
         }
         
         if !Defaults.subscribedToSharedDatabase {
-            databases.shared.save(createDatabaseSubscription(subscriptionId: "shared")) { [weak self] subscription, error in
+            databases.shared.addDatabaseSubscription(subscriptionID: "Shared", operationQueue: operationQueue) { [weak self] error in
                 if error == nil {
                     Defaults.subscribedToPrivateDatabase = true
                     log("Cloud >> Successfully subscribed to shared database.")
@@ -416,10 +407,10 @@ extension Cloud {
     }
     
     private func unsubscribeToDatabaseChanges() {
-        log("Cloud >> Subscribe to database changes.")
+        log("Cloud >> Unsubscribe to database changes.")
         
         if Defaults.subscribedToPrivateDatabase {
-            databases.private.delete(withSubscriptionID: "private") { [weak self] _, error in
+            databases.private.delete(withSubscriptionID: "Private") { [weak self] _, error in
                 if error == nil {
                     Defaults.subscribedToPrivateDatabase = false
                     log("Cloud >> Successfully unsubscribed to private database.")
@@ -433,7 +424,7 @@ extension Cloud {
         }
         
         if Defaults.subscribedToSharedDatabase {
-            databases.shared.delete(withSubscriptionID: "shared") { [weak self] _, error in
+            databases.shared.delete(withSubscriptionID: "Shared") { [weak self] _, error in
                 if error == nil {
                     Defaults.subscribedToSharedDatabase = false
                     log("Cloud >> Successfully unsubscribed to shared database.")
@@ -478,11 +469,13 @@ extension Cloud {
                 self?.container.fetchLongLivedOperation(withID: id, completionHandler: { operation, error in
                     guard error == nil else { return }
                     if let operation = operation as? CKModifyRecordsOperation {
-                        operation.modifyRecordsCompletionBlock = { (_,_,_) in
-                            log("Cloud >> Resume modify records operation success!")
+                        operation.modifyRecordsCompletionBlock = { saved, deleted, error in
+                            log("Cloud >> Resume modify records operation.")
+                            guard error == nil else { return }
+                            self?.changeManager?.finishUploads(saved: saved, deleted: deleted)
                         }
                         // TODO: Crashing here
-                        self?.container.privateCloudDatabase.add(operation)
+                        self?.databases.private.add(operation)
                     }
                 })
             }
@@ -504,7 +497,7 @@ extension Cloud {
     
     private func handlePushAndPullError(error: Error) {
         switch error {
-        case CloudError.iCloudAccountNotAvailable:
+        case CloudError.iCloudAccountNotAvailable, CKError.notAuthenticated:
             NotificationCenter.default.post(Notification(name: .iCloudAccountNotAvailable))
         default: break
         }
@@ -516,9 +509,7 @@ extension Cloud {
 extension Cloud {
     fileprivate enum Defaults {
         private static let serverChangeTokenKey = "cloudability_server_change_token"
-        private static let createdCustomZoneKey = "cloudability_created_custom_zone"
         private static let subscribedToPrivateDatabaseKey = "subscribed_to_private_database"
-        private static let subscribedToPublicDatabaseKey = "subscribed_to_public_database"
         private static let subscribedToSharedDatabaseKey = "subscribed_to_shared_database"
         private static let zoneChangeTokenKeyPrefix = "cloudability_zone_change_token_"
         
@@ -559,11 +550,6 @@ extension Cloud {
         
         static func setZoneChangeToken(to token: CKServerChangeToken?, forZoneID zoneID: CKRecordZoneID) {
             setZoneChangeToken(to: token, forZoneName: zoneID.zoneName)
-        }
-        
-        static var createdCustomZone: Bool {
-            get { return UserDefaults.standard.bool(forKey: createdCustomZoneKey) }
-            set { UserDefaults.standard.set(newValue, forKey: createdCustomZoneKey) }
         }
         
         static var subscribedToPrivateDatabase: Bool {

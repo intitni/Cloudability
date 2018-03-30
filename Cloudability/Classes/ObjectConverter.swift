@@ -131,7 +131,7 @@ class ObjectConverter {
                 guard let _ = targetType as? CloudableObject.Type else { break }
                 if isArray {
                     guard let recordValue = recordValue else { break }
-                    let ids = recordValue.list as! [String]
+                    let ids = (recordValue.list as! [CKReference]).map { $0.recordID.recordName }
                     let relationship: PendingRelationship = {
                         let p = PendingRelationship()
                         p.fromType = recordType
@@ -149,7 +149,7 @@ class ObjectConverter {
                         p.fromIdentifier = id
                         p.toType = property.objectClassName!
                         p.propertyName = property.name
-                        if let id = recordValue?.string {
+                        if let id = recordValue?.reference?.recordID.recordName {
                             p.targetIdentifiers.append(id)
                         }
                         return p
@@ -174,16 +174,19 @@ class ObjectConverter {
         case .object:
             let className = property.objectClassName!
             let targetType = realmObjectType(forName: className)!
-            guard let _ = targetType as? CloudableObject.Type else { return nil }
-            
+            guard let type = targetType as? CloudableObject.Type else { return nil }
+            let targetZoneID = zoneID(for: type)
             if !isArray {
                 guard let object = value as? CloudableObject
                     else { return nil }
-                return object.pkProperty as CKRecordValue
+                return CKReference(recordID: CKRecordID(recordName: object.pkProperty, zoneID: targetZoneID), action: .none)
             } else {
                 let list = object.dynamicList(property.name)
                 guard let targetPrimaryKey = targetType.primaryKey() else { return nil }
-                let ids = list.flatMap { $0.value(forKey: targetPrimaryKey) as? String }
+                let all = list
+                    .compactMap { $0.value(forKey: targetPrimaryKey) as? String }
+                    .map { CKReference(recordID: CKRecordID(recordName: $0, zoneID: targetZoneID), action: .none) }
+                let ids = Array(all)
                 if ids.isEmpty { return nil }
                 return ids as NSArray
             }
@@ -232,6 +235,10 @@ extension CKRecordValue {
     var list: Array<Any>? {
         guard let array = self as? NSArray else { return nil }
         return Array(array)
+    }
+    
+    var reference: CKReference? {
+        return self as? CKReference
     }
 }
 

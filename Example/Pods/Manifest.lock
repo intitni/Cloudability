@@ -2,14 +2,14 @@ PODS:
   - Cloudability (0.1.0):
     - PromiseKit/CloudKit (~> 6.0)
     - RealmSwift
-  - PromiseKit/CloudKit (6.1.1):
+  - PromiseKit/CloudKit (6.2.3):
     - PromiseKit/CorePromise
-  - PromiseKit/CorePromise (6.1.1)
-  - Realm (3.1.1):
-    - Realm/Headers (= 3.1.1)
-  - Realm/Headers (3.1.1)
-  - RealmSwift (3.1.1):
-    - Realm (= 3.1.1)
+  - PromiseKit/CorePromise (6.2.3)
+  - Realm (3.3.1):
+    - Realm/Headers (= 3.3.1)
+  - Realm/Headers (3.3.1)
+  - RealmSwift (3.3.1):
+    - Realm (= 3.3.1)
 
 DEPENDENCIES:
   - Cloudability (from `../`)
@@ -20,9 +20,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Cloudability: 1ca3438d194461130f8ad25b54eb5817b8aa7a29
-  PromiseKit: 876f433b87c970f020e04e35dbe68ab21d240498
-  Realm: 42d1c38a5b1bbcc828b48a7ce702cb86fc68adf4
-  RealmSwift: d31937ca6a6ee54acde64ec839523c0a3c04924b
+  PromiseKit: 62f37bb4900a9b0b7550d017e41497171d93face
+  Realm: 63ebf4903b446b0bdf2131244eb1e1549925c724
+  RealmSwift: f28fe8507bdfb8f1c924962401b83e7b9d7abb5c
 
 PODFILE CHECKSUM: 9c50597ff4a720241ee1490b4ccced546c349b05
 

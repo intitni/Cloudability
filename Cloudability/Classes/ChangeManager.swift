@@ -102,7 +102,7 @@ extension ChangeManager {
             }
     
         let d: [Deletion] = deletion
-            .flatMap { recordID in
+            .compactMap { recordID in
                 let identifier = recordID.recordName
                 guard let se = realm.syncedEntity(withIdentifier: identifier) else { return nil }
                 return Deletion(syncedEntity: SyncedEntity(value: se))
@@ -218,7 +218,7 @@ extension ChangeManager {
         
         let converter = objectConverter
         
-        let modification: [CKRecord] = uploadingModificationSyncedEntities.flatMap {
+        let modification: [CKRecord] = uploadingModificationSyncedEntities.compactMap {
             let object = oRealm.object(ofType: $0.objectType, forPrimaryKey: $0.identifier)
             return (object as? CloudableObject).map(converter.convert)
         }
@@ -234,12 +234,12 @@ extension ChangeManager {
     func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
         let realm = Realm.cloudRealm
         let savedEntities: [SyncedEntity] = saved?
-            .flatMap { record in
+            .compactMap { record in
                 let id = record.recordID.recordName
                 return realm.syncedEntity(withIdentifier: id)
             } ?? []
         let deletedEntites: [SyncedEntity] = deleted?
-            .flatMap { recordID in
+            .compactMap { recordID in
                 return realm.syncedEntity(withIdentifier: recordID.recordName)
             } ?? []
         
@@ -265,7 +265,7 @@ extension ChangeManager {
     private func writeToDisk(deletion: [Deletion]) {
         let oRealm = try! Realm()
         let cRealm = Realm.cloudRealm
-        let objects: [Object] = deletion.flatMap {
+        let objects: [Object] = deletion.compactMap {
             let syncedEntity = $0.syncedEntity
             let identifier = syncedEntity.identifier
             let type = realmObjectType(forName: syncedEntity.type)!

@@ -3,7 +3,8 @@ import RealmSwift
 import Cloudability
 import CloudKit
 
-let cloud = Cloud(containerIdentifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom", zoneType: .sameZone("zone"))
+let container = CKContainer(identifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
+let cloud = Cloud(container: container, zoneType: .sameZone("zone"))
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,7 +15,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         application.registerForRemoteNotifications()
-        cloud.switchOn()
+        // cloud.switchOn()
+        
+        container.privateCloudDatabase.addDatabaseSubscription(subscriptionID: "Private-Changes") { error in
+            print(error?.localizedDescription ?? "Done")
+        }
         
         // excluding Cloudability objects
         Realm.Configuration.defaultConfiguration.objectTypes = [
