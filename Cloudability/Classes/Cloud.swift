@@ -46,6 +46,8 @@ public final class Cloud {
     let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     let dispatchQueue = DispatchQueue(label: "com.intii.Cloudability.Cloud", qos: .utility)
     
+    var serverChangeToken = Defaults.serverChangeToken
+    
     var finishBlock: ()->Void = {}
     
     public init(container: CKContainer = .default(), zoneType: ZoneType = .defaultZone, finishBlock: @escaping ()->Void = {}) {
@@ -126,6 +128,9 @@ extension Cloud {
             logError("Cloud >x \(error.localizedDescription)")
             self?.handlePushAndPullError(error: error)
             completionHandler(false)
+            self?.retryOperationIfPossible(with: error) {
+                self?.pull()
+            }
         }
     }
     
@@ -172,6 +177,9 @@ extension Cloud {
             logError("Cloud >x \(error.localizedDescription)")
             self?.handlePushAndPullError(error: error)
             completionHandler(false)
+            self?.retryOperationIfPossible(with: error) {
+                self?.push(modification: modification, deletion: deletion)
+            }
         }
     }
     
@@ -233,13 +241,15 @@ extension Cloud {
                 
                 self.fetchChanges(from: zoneIDs, in: self.databases.private)
                 
-            }.done(on: DispatchQueue.main) {
+            }.done(on: DispatchQueue.main) { [weak self] in
                 
+                guard let ego = self else { seal.reject(CloudError.cancel); return }
                 let (modification, deletion, tokens) = $0
                 changeManager.handleSyncronizationGet(modification: modification, deletion: deletion)
                 for (id, token) in tokens {
                     Defaults.setZoneChangeToken(to: token, forZoneID: id)
                 }
+                Defaults.serverChangeToken = ego.serverChangeToken
                 seal.fulfill(())
                 
             }.catch { error in
@@ -277,7 +287,7 @@ extension Cloud {
     }
     
     private func fetchChangesInDatabase() -> Promise<[CKRecordZoneID]> {
-        return Promise { seal in
+        return Promise { [weak self] seal in
             log("Cloud >> Fetch changes in private database.")
             
             var zoneIDs = [CKRecordZoneID]()
@@ -286,24 +296,20 @@ extension Cloud {
             operation.fetchAllChanges = true
 
             operation.changeTokenUpdatedBlock = { token in
-                Defaults.serverChangeToken = token
+                self?.serverChangeToken = token
             }
             
             operation.recordZoneWithIDChangedBlock = { zoneID in
                 zoneIDs.append(zoneID)
             }
             
-            operation.fetchDatabaseChangesCompletionBlock = { [weak self] token, _, error in
-                if let error = error {
-                    self?.retryOperationIfPossible(with: error) {
-                        self?.pull()
-                    }
-                    seal.reject(error)
-                    return
-                }
-                
-                Defaults.serverChangeToken = token
-                seal.fulfill(zoneIDs)
+            operation.recordZoneWithIDWasDeletedBlock = { _ in
+                // sorry we don't delete zones now
+            }
+            
+            operation.fetchDatabaseChangesCompletionBlock = { token, _, error in
+                if error == nil { self?.serverChangeToken = token }
+                seal.resolve(zoneIDs, error)
             }
             
             operation.qualityOfService = .utility
@@ -355,16 +361,8 @@ extension Cloud {
                 }
             }
             
-            operation.fetchRecordZoneChangesCompletionBlock = { [weak self] error in
-                if let error = error {
-                    self?.retryOperationIfPossible(with: error) {
-                        self?.pull()
-                    }
-                    seal.reject(error)
-                    return
-                }
-                
-                seal.fulfill((recordsToSave, recordsToDelete, lastChangeTokens))
+            operation.fetchRecordZoneChangesCompletionBlock = { error in
+                seal.resolve((recordsToSave, recordsToDelete, lastChangeTokens), error)
             }
             
             operation.qualityOfService = .utility
@@ -444,16 +442,8 @@ extension Cloud {
             let operation = CKModifyRecordsOperation(recordsToSave: save, recordIDsToDelete: deletion)
             operation.isLongLived = true
             operation.savePolicy = .changedKeys
-            operation.modifyRecordsCompletionBlock = { [weak self] saved, deleted, error in
-                if let error = error {
-                    self?.retryOperationIfPossible(with: error) {
-                        self?.push(modification: save, deletion: deletion)
-                    }
-                    seal.reject(error)
-                    return
-                }
-                
-                seal.fulfill((saved, deleted))
+            operation.modifyRecordsCompletionBlock = { saved, deleted, error in
+                seal.resolve((saved, deleted), error)
             }
             
             operation.qualityOfService = .utility
