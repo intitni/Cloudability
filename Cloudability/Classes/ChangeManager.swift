@@ -137,7 +137,7 @@ extension ChangeManager {
             for schema in oRealm.schema.objectSchema {
                 guard !Defaults.createdSyncedEntity(for: schema) else { continue }
                 defer { Defaults.setCreatedSyncedEntity(for: schema, to: true) }
-                let objectClass = realmObjectType(forName: schema.className)!
+                guard let objectClass = realmObjectType(forName: schema.className) else { continue }
                 guard objectClass is CloudableObject.Type else { continue }
                 let primaryKey = objectClass.primaryKey()!
                 let results = oRealm.objects(objectClass)
@@ -157,7 +157,7 @@ extension ChangeManager {
     private func setupLocalDatabaseObservations() {
         let realm = try! Realm()
         for schema in realm.schema.objectSchema {
-            let objClass = realmObjectType(forName: schema.className)!
+            let objClass = realmObjectType(forName: schema.className)
             guard let objectClass = objClass as? CloudableObject.Type else { continue }
             let results = realm.objects(objectClass)
             
@@ -360,7 +360,7 @@ extension ChangeManager {
     func validateCloudableObjects() {
         let realm = try! Realm()
         for schema in realm.schema.objectSchema {
-            let objClass = realmObjectType(forName: schema.className)!
+            guard let objClass = realmObjectType(forName: schema.className) else { continue }
             guard let _ = objClass as? CloudableObject.Type else { continue }
             assert(schema.primaryKeyProperty != nil, "\(schema.className) should provide a primary key.")
             assert(schema.primaryKeyProperty!.type == .string, "\(schema.className)'s primary key must be String.")
