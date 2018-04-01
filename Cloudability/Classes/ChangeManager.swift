@@ -328,6 +328,7 @@ extension ChangeManager {
         let cRealm = Realm.cloudRealm
         let oRealm = try! Realm()
         let toBeDeleted = List<PendingRelationship>()
+        var appliedRelationships = [PendingRelationship]()
         for relationship in cRealm.pendingRelationships {
             do {
                 try oRealm.safeWrite(withoutNotifying: collectionObservations) {
@@ -337,12 +338,14 @@ extension ChangeManager {
                     relationship.isApplied = true
                     relationship.attempts += 1
                 }
+                appliedRelationships.append(relationship)
                 toBeDeleted.append(relationship)
             } catch PendingRelationshipError.partiallyConnected {
                 log("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
                 try? cRealm.safeWrite {
                     relationship.attempts += 1
                 }
+                appliedRelationships.append(relationship)
             } catch PendingRelationshipError.dataCorrupted {
                 log("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
                 try? cRealm.safeWrite {
@@ -351,6 +354,27 @@ extension ChangeManager {
             } catch {
                 logError(error.localizedDescription)
             }
+        }
+        
+        var updatedObjects = [Object]()
+        for relationship in appliedRelationships {
+            guard let fromType = realmObjectType(forName: relationship.fromType),
+                let fromTypeObject = oRealm.object(ofType: fromType, forPrimaryKey: relationship.fromIdentifier)
+                else { continue }
+            updatedObjects.append(fromTypeObject)
+            
+            let objectFetcher: (String) -> DynamicObject? = { id in
+                return oRealm.dynamicObject(ofType: relationship.toType, forPrimaryKey: id)
+            }
+            
+            for id in relationship.targetIdentifiers {
+                guard let object = objectFetcher(id) else { continue }
+                updatedObjects.append(object)
+            }
+        }
+        
+        for object in updatedObjects {
+            (object as? HasAfterMergeAction)?.afterCloudMerge()
         }
     }
 }
