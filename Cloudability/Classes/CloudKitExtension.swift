@@ -111,7 +111,6 @@ public extension CKDatabase {
         let subscription = CKDatabaseSubscription(subscriptionID: subscriptionID)
         
         let notificationInfo = CKNotificationInfo()
-        notificationInfo.alertBody = "Database (\(subscriptionID)) was changed!"
         notificationInfo.shouldSendContentAvailable = true
         
         subscription.notificationInfo = notificationInfo
