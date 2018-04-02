@@ -18,6 +18,7 @@ public extension Notification.Name {
 
 public enum CloudError: Error {
     case alreadySyncing
+    case alreadyOn
     case iCloudAccountNotAvailable
     case zonesNotCreated
     case cancel
@@ -62,15 +63,32 @@ public final class Cloud {
         NotificationCenter.default.removeObserver(self)
     }
     
-    public func switchOn() {
-        guard !enabled else { return }
+    public func switchOn(completionHandler: @escaping (Error?) -> Void) {
+        guard !enabled else { completionHandler(CloudError.alreadyOn); return }
+        container.accountStatus { [weak self] status, error in
+            guard let ego = self else {
+                completionHandler(CloudError.cancel)
+                return
+            }
+            
+            switch status {
+            case .available:
+                ego._switchOn()
+                completionHandler(nil)
+            case .couldNotDetermine, .restricted, .noAccount:
+                completionHandler(CloudError.iCloudAccountNotAvailable)
+            }
+        }
+    }
+    
+    private func _switchOn() {
         enabled = true
         changeManager = ChangeManager(zoneType: zoneType)
         changeManager?.cloud = self
         changeManager?.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
-    
+        
         pull { [weak self] in guard $0 else { return }; self?.push() } // syncronize at launch
         
         resumeLongLivedOperationsIfPossible()
@@ -96,6 +114,8 @@ extension Cloud {
     
     /// Start pull
     public func pull(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
+        guard enabled else { completionHandler(false); return }
+        
         log("Cloud >> Start pull.")
         
         Promise().then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
@@ -136,6 +156,7 @@ extension Cloud {
     
     /// Start push
     public func push(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
+        guard enabled else { completionHandler(false); return }
         guard let changeManager = changeManager else { return }
         let uploads = changeManager.generateUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
@@ -146,6 +167,8 @@ extension Cloud {
 
 extension Cloud {
     func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Bool)->Void = { _ in }) {
+        guard enabled else { completionHandler(false); return }
+        
         log("Cloud >> Start push.")
         
         Promise().then(on: dispatchQueue) { [weak self] Void -> Promise<CKAccountStatus> in
