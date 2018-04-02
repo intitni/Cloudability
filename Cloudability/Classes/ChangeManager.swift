@@ -69,7 +69,7 @@ class ChangeManager {
             cRealm.deleteAll()
         }
         for schema in oRealm.schema.objectSchema {
-            let objectClass = realmObjectType(forName: schema.className)!
+            guard let objectClass = realmObjectType(forName: schema.className) else { continue }
             guard objectClass is CloudableObject.Type else { continue }
             Defaults.setCreatedSyncedEntity(for: schema, to: false)
         }
