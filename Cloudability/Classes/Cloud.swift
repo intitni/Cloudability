@@ -66,17 +66,19 @@ public final class Cloud {
     public func switchOn(completionHandler: @escaping (Error?) -> Void) {
         guard !enabled else { completionHandler(CloudError.alreadyOn); return }
         container.accountStatus { [weak self] status, error in
-            guard let ego = self else {
-                completionHandler(CloudError.cancel)
-                return
-            }
-            
-            switch status {
-            case .available:
-                ego._switchOn()
-                completionHandler(nil)
-            case .couldNotDetermine, .restricted, .noAccount:
-                completionHandler(CloudError.iCloudAccountNotAvailable)
+            DispatchQueue.main.async {
+                guard let ego = self else {
+                    completionHandler(CloudError.cancel)
+                    return
+                }
+                
+                switch status {
+                case .available:
+                    ego._switchOn()
+                    completionHandler(nil)
+                case .couldNotDetermine, .restricted, .noAccount:
+                    completionHandler(CloudError.iCloudAccountNotAvailable)
+                }
             }
         }
     }
