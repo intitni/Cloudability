@@ -104,7 +104,7 @@ extension ChangeManager {
         let cRealm = Realm.cloudRealm
         let oRealm = try! Realm()
         
-        cloud_log("ChangeManager >> Setting up synced entities.")
+        cloud_log("Set up synced entities.")
         
         try? cRealm.safeWrite() {
             for schema in oRealm.schema.objectSchema {
@@ -231,13 +231,13 @@ extension ChangeManager {
 extension ChangeManager {
     /// Write modifications and deletions to disk.
     private func writeToDisk(modification: [Modification], deletion: [Deletion]) {
-        cloud_log("ChangeManager >> Writing deletions.")
+        cloud_log("Writing deletions.")
         writeToDisk(deletion: deletion)
         
-        cloud_log("ChangeManager >> Writing modifications.")
+        cloud_log("Writing modifications.")
         writeToDisk(modification: modification)
         
-        cloud_log("ChangeManager >> Writing relationships.")
+        cloud_log("Writing relationships.")
         applyPendingRelationships()
     }
     
@@ -385,7 +385,7 @@ extension ChangeManager {
                     
                 // We should not see any true deletion, soft deletion should be used in Cloudable objects.
                 case let .update(result, _, insertion, modification):
-                    cloud_log("ChangeManager >> Change detected.")
+                    cloud_log("Change detected.")
                     guard let ego = self else { return }
                     
                     /// All insertions and modifications, not marked as soft deleted
