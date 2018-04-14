@@ -174,6 +174,8 @@ class ObjectConverter {
         case .object:
             let className = property.objectClassName!
             let targetType = realmObjectType(forName: className)!
+            
+            // Object that is not Cloudable will be ignored.
             guard let type = targetType as? CloudableObject.Type else { return nil }
             let targetZoneID = zoneID(for: type)
             if !isArray {

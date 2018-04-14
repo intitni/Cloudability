@@ -78,12 +78,12 @@ public extension Realm {
 }
 
 
-internal func log(_ item: @autoclosure () -> Any) {
-    print(item())
+internal func cloud_log(_ item: String) {
+    print(item)
 }
 
-internal func logError(_ item: @autoclosure () -> Any, file: String = #file, function: String = #function, line: Int = #line) {
+internal func cloud_logError(_ item: String, file: String = #file, function: String = #function, line: Int = #line) {
     print("\(file).\(function) @line")
-    print(item())
+    print(item)
 }
 
