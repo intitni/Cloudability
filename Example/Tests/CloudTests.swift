@@ -12,6 +12,27 @@ import CloudKit
 @testable import Cloudability
 @testable import Cloudability_Example
 
+class MockContainer: Container {
+    override init(container: CKContainer) {
+        super.init(container: container)
+        privateCloudDatabase = MockDatabase(database: container.privateCloudDatabase)
+        publicCloudDatabase = MockDatabase(database: container.publicCloudDatabase)
+        sharedCloudDatabase = MockDatabase(database: container.sharedCloudDatabase)
+    }
+}
+
+class MockDatabase: Database {
+    override func add(_ operation: CKDatabaseOperation) {
+        if let operation = operation as? CKFetchDatabaseChangesOperation {
+            operation.changeTokenUpdatedBlock?("changeTokenUpdatedBlock")
+            operation.recordZoneWithIDChangedBlock?(CKRecordZoneID(zoneName: "zone", ownerName: CKCurrentUserDefaultName))
+            operation.fetchDatabaseChangesCompletionBlock?("fetchDatabaseChangesCompletionBlock", false, nil)
+        } else if let operation = operation as? CKFetchRecordZoneChangesOperation {
+            let recordZoneIDs = operation.recordZoneIDs
+        }
+    }
+}
+
 class CloudTests: XCTestCase {
     
     override class func setUp() {

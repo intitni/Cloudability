@@ -36,69 +36,6 @@ class ListViewController<ObjectType: CloudableObject & TestableObject>: UIViewCo
     
     @objc func handleAddButtonTap() {
         switch ObjectType.self {
-        case is Pilot.Type:
-            let alert = UIAlertController(title: "Add Pilot", message: nil, preferredStyle: .alert)
-            alert.addTextField {
-                $0.accessibilityLabel = "name"
-                $0.placeholder = "name"
-            }
-            alert.addTextField {
-                $0.accessibilityLabel = "age"
-                $0.placeholder = "age"
-                $0.keyboardType = .numberPad
-            }
-            let save = UIAlertAction(title: "Add", style: .default) { action in
-                guard let name = alert.textFields?.filter({ $0.accessibilityLabel == "name" }).first,
-                    let age = alert.textFields?.filter({ $0.accessibilityLabel == "age" }).first,
-                    let n = name.text, let a = Int(age.text ?? ""), !n.isEmpty else { return }
-                let pilot = Pilot(name: n, age: a)
-                let realm = try! Realm()
-                try? realm.write {
-                    realm.add(pilot)
-                }
-            }
-            alert.addAction(save)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        case is MobileArmor.Type:
-            let alert = UIAlertController(title: "Add Mobile Armor", message: nil, preferredStyle: .alert)
-            alert.addTextField {
-                $0.accessibilityLabel = "number"
-                $0.placeholder = "number of pilots needed"
-                $0.keyboardType = .numberPad
-            }
-            alert.addTextField {
-                $0.accessibilityLabel = "type"
-                $0.placeholder = "type"
-            }
-            let save = UIAlertAction(title: "Add", style: .default) { action in
-                guard let number = alert.textFields?.filter({ $0.accessibilityLabel == "number" }).first,
-                    let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
-                    let t = type.text, let n = Int(number.text ?? ""), !t.isEmpty else { return }
-                let armor = MobileArmor(type: t, numberOfPilotsNeeded: n)
-                let realm = try! Realm()
-                try? realm.write {
-                    realm.add(armor)
-                }
-            }
-            alert.addAction(save)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        case is MobileSuit.Type:
-            let alert = UIAlertController(title: "Add Mobile Suit", message: nil, preferredStyle: .alert)
-            alert.addTextField {
-                $0.accessibilityLabel = "type"
-                $0.placeholder = "type"
-            }
-            let save = UIAlertAction(title: "Add", style: .default) { action in
-                guard let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
-                    let t = type.text, !t.isEmpty else { return }
-                let suit = MobileSuit(type: t)
-                let realm = try! Realm()
-                try? realm.write {
-                    realm.add(suit)
-                }
-            }
-            alert.addAction(save)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         case is BattleShip.Type:
             let alert = UIAlertController(title: "Add Battle Ship", message: nil, preferredStyle: .alert)
             alert.addTextField {
@@ -122,7 +59,11 @@ class ListViewController<ObjectType: CloudableObject & TestableObject>: UIViewCo
             }
             alert.addAction(save)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        default: break
+            present(alert, animated: true, completion: nil)
+        default:
+            let alert = UIAlertController(title: "You can only add in BattleShip list", message: "To add pilots and mobile suits, go to detail view.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .cancel))
+            present(alert, animated: true, completion: nil)
         }
     }
     

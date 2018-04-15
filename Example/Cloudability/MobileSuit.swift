@@ -18,7 +18,8 @@ class MobileSuit: Object, Cloudable, TestableObject {
     }
     
     @objc dynamic var type = ""
-    @objc dynamic var pilot: Pilot?
+    let pilots = LinkingObjects(fromType: Pilot.self, property: "piloting")
+    @objc dynamic var onShip: BattleShip? = nil
     
     var title: String { return type + " " + id }
     
@@ -29,12 +30,17 @@ class MobileSuit: Object, Cloudable, TestableObject {
         Type: \(type)
         
         ----------
-        Pilot: \(pilot?.description ?? "none")
+        Pilot: \(pilots.first?.description ?? "none")
         """
     }
     
     convenience init(type: String) {
         self.init()
         self.type = type
+    }
+    
+    static func createRandom() -> MobileSuit {
+        let types = ["RX0"]
+        return MobileSuit(type: types[types.indices.random])
     }
 }

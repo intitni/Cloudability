@@ -72,7 +72,7 @@ extension Realm {
             else { throw PendingRelationshipError.partiallyConnected }
         
         guard let object = fromTypeObject as? CloudableObject else {
-            log("Object for type '\(pendingRelationship.fromType)' in PendingRelationship is not Cloudable.")
+            cloud_log("Object for type '\(pendingRelationship.fromType)' in PendingRelationship is not Cloudable.")
             throw PendingRelationshipError.dataCorrupted
         }
         
@@ -80,12 +80,12 @@ extension Realm {
             .filter({ $0.name == pendingRelationship.propertyName })
             .first
         else {
-            log("Object for type '\(object.recordType)' doesn't have property named '\(pendingRelationship.propertyName)'")
+            cloud_log("Object for type '\(object.recordType)' doesn't have property named '\(pendingRelationship.propertyName)'")
             throw PendingRelationshipError.dataCorrupted
         }
         
         guard property.type == .object else {
-            log("Property '\(object.recordType).\(pendingRelationship.propertyName)' is not pointing to object(s).")
+            cloud_log("Property '\(object.recordType).\(pendingRelationship.propertyName)' is not pointing to object(s).")
             throw PendingRelationshipError.dataCorrupted
         }
         

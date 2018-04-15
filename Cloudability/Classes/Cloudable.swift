@@ -23,7 +23,7 @@ public protocol HasBeforeDeletionAction: AnyObject {
     func beforeCloudDeletion()
 }
 
-extension Cloudable where Self: Object  {
+extension Cloudable where Self: Object {
     var className: String { return Self.className() }
     
     public static var recordType: String {
