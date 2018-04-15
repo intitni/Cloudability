@@ -79,11 +79,15 @@ public extension Realm {
 
 
 internal func cloud_log(_ item: String) {
+    #if DEBUG
     print("Cloud >> " + item)
+    #endif
 }
 
 internal func cloud_logError(_ item: String, file: String = #file, function: String = #function, line: Int = #line) {
+    #if DEBUG
     print("\(file).\(function) @line")
     print("Cloud >x " + item)
+    #endif
 }
 
