@@ -9,8 +9,6 @@
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
-## Requirements
-
 ## Installation
 
 Cloudability is available through [CocoaPods](http://cocoapods.org). To install
@@ -19,6 +17,38 @@ it, simply add the following line to your Podfile:
 ```ruby
 pod 'Cloudability'
 ```
+
+## Usage
+
+1. Mark your objects with `Cloudable`.
+2. Create an instance of `Cloud` somewhere.
+3. Call `cloud.switchOn(completionHandler:)` to start it.
+4. Done
+
+When you delete an `Cloudable` object, please use `realm.delete(cloudableObject:)` instead.
+
+Optionally,
+
+- Exclude `PendingNotification` and `SyncedEntity` from your realm configuration. Though they are stored in another realm file in documents/cloudability.realm.
+- Listen to push notifications.
+    By default, Cloudability creates database subscriptions for private and shared database. You can call `cloud.pull(completionHandler:)` when you recieve a notification.
+- Conform your objects to `HasAfterMergeAction` and `HasBeforeDeletionAction`.
+
+## Behaviours
+
+It supports several `zoneType`s when you create a `Cloud`, but only `.custom(String)` is tested (I mean used in my app). It may lose some abilities if you are using the default `CKContainer` or the default `CKZone`.
+
+When you `switchOn` a `Cloud`, it will perform sync immediately. If your device has not logged into iCloud, you will get an `Error` instead.
+
+By default, Cloudability creates database subscriptions for private and shared database. If you want other subscriptions, you have to do it yourself.
+
+Cloudability will listen to database changes, and do pushing automatically. But realm observations don't care that much about deleted objects, so you should use  `realm.delete(cloudableObject:)` instead when deleting an `Cloudable` object.
+
+Relations between objects are converted to `CKReference` when talking to CloudKit. `LinkingObjects` and relations to non-`Cloudable` objects will be ignored.
+
+## It's still under construction
+
+Not even unit tested. Used in my iOS app Best Before.
 
 ## Author
 
