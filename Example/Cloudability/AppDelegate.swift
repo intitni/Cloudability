@@ -1,12 +1,10 @@
-//
-//  AppDelegate.swift
-//  Cloudability
-//
-//  Created by int123c on 12/03/2017.
-//  Copyright (c) 2017 int123c. All rights reserved.
-//
-
 import UIKit
+import RealmSwift
+import Cloudability
+import CloudKit
+
+let container = Container(identifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
+let cloud = Cloud(container: container, zoneType: .sameZone("zone"))
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,8 +13,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // excluding Cloudability objects
+        Realm.Configuration.defaultConfiguration.objectTypes = [
+            Pilot.self,
+            MobileSuit.self,
+            BattleShip.self
+        ]
+        
+        application.registerForRemoteNotifications()
+        cloud.switchOn { error in
+            print(error?.localizedDescription ?? "Switched on!")
+        }
+ 
         return true
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        
+        let dict = userInfo as! [String: NSObject]
+        guard let _ = CKNotification(fromRemoteNotificationDictionary:dict) as? CKDatabaseNotification else { return }
+        
+        cloud.pull { error in
+            if error == nil {
+                completionHandler(.newData)
+            } else {
+                completionHandler(.failed)
+            }
+        }
+        
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -38,7 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        
     }
 
 

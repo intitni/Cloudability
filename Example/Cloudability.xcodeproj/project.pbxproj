@@ -7,13 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		136723151FF6A1A4007AF534 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 136723141FF6A1A4007AF534 /* CloudKit.framework */; };
+		13D2852220021270003E2BBA /* Pilot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8AE1FD3FC7F0019A524 /* Pilot.swift */; };
+		13D2852420021270003E2BBA /* MobileSuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */; };
+		13D2852520021270003E2BBA /* BattleShip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B61FD3FD030019A524 /* BattleShip.swift */; };
+		13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */; };
+		13D2DEBB200B837C000B5DF4 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */; };
+		13F5F2F1203DA6CE00CAB4EB /* FormBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F5F2F0203DA6CE00CAB4EB /* FormBuilder.swift */; };
 		31CF9D429EDE24D3A920427D /* Pods_Cloudability_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
-		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		CA27D5BBC6D5A0E59CA3C672 /* Pods_Cloudability_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 196FBBD2AE35C4B86E3F8298 /* Pods_Cloudability_Tests.framework */; };
 /* End PBXBuildFile section */
 
@@ -28,9 +34,20 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1348F8AE1FD3FC7F0019A524 /* Pilot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pilot.swift; sourceTree = "<group>"; };
+		1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSuit.swift; sourceTree = "<group>"; };
+		1348F8B61FD3FD030019A524 /* BattleShip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleShip.swift; sourceTree = "<group>"; };
+		1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectConverterTests.swift; sourceTree = "<group>"; };
+		136723021FF3D7A9007AF534 /* ChangeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeManagerTests.swift; sourceTree = "<group>"; };
+		136723111FF53D5E007AF534 /* CloudTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTests.swift; sourceTree = "<group>"; };
+		136723131FF6A19D007AF534 /* Cloudability_Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cloudability_Example.entitlements; sourceTree = "<group>"; };
+		136723141FF6A1A4007AF534 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
+		13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
+		13F5F2F0203DA6CE00CAB4EB /* FormBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormBuilder.swift; sourceTree = "<group>"; };
 		157BE5BFEBE066064CF26CFA /* Pods-Cloudability_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		196FBBD2AE35C4B86E3F8298 /* Pods_Cloudability_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		367760927C64A1FE87A863C7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		367760927C64A1FE87A863C7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* Cloudability_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cloudability_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -40,13 +57,12 @@
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		607FACE51AFB9204008FA782 /* Cloudability_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Cloudability_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		62BBCE3E7D4E489210500B75 /* Pods-Cloudability_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example.release.xcconfig"; sourceTree = "<group>"; };
-		84DFC48F53271140BCE9584D /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		84DFC48F53271140BCE9584D /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		A1324F57549CE42BFA0DA95D /* Pods-Cloudability_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA2078B033295A63EFEB4148 /* Pods-Cloudability_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example.debug.xcconfig"; sourceTree = "<group>"; };
-		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; };
+		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +71,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				31CF9D429EDE24D3A920427D /* Pods_Cloudability_Example.framework in Frameworks */,
+				136723151FF6A1A4007AF534 /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +100,7 @@
 		0C659F42422CEB48EE1E1166 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				136723141FF6A1A4007AF534 /* CloudKit.framework */,
 				B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */,
 				196FBBD2AE35C4B86E3F8298 /* Pods_Cloudability_Tests.framework */,
 			);
@@ -92,6 +110,7 @@
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
+				136723131FF6A19D007AF534 /* Cloudability_Example.entitlements */,
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
 				607FACD21AFB9204008FA782 /* Example for Cloudability */,
 				607FACE81AFB9204008FA782 /* Tests */,
@@ -115,10 +134,16 @@
 			children = (
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
+				13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */,
+				13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */,
+				13F5F2F0203DA6CE00CAB4EB /* FormBuilder.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
+				1348F8AE1FD3FC7F0019A524 /* Pilot.swift */,
+				1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */,
+				1348F8B61FD3FD030019A524 /* BattleShip.swift */,
 			);
 			name = "Example for Cloudability";
 			path = Cloudability;
@@ -135,7 +160,9 @@
 		607FACE81AFB9204008FA782 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				607FACEB1AFB9204008FA782 /* Tests.swift */,
+				1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */,
+				136723021FF3D7A9007AF534 /* ChangeManagerTests.swift */,
+				136723111FF53D5E007AF534 /* CloudTests.swift */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
 			);
 			path = Tests;
@@ -171,7 +198,6 @@
 				607FACCD1AFB9204008FA782 /* Frameworks */,
 				607FACCE1AFB9204008FA782 /* Resources */,
 				C95E0F0DA1887516AA8BD1E6 /* [CP] Embed Pods Frameworks */,
-				E8DAE1A7E7A495DC95DAB43C /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -190,8 +216,7 @@
 				607FACE11AFB9204008FA782 /* Sources */,
 				607FACE21AFB9204008FA782 /* Frameworks */,
 				607FACE31AFB9204008FA782 /* Resources */,
-				FE4666F7C70C9CBCE3F07E8F /* [CP] Embed Pods Frameworks */,
-				5FF5882471D7054294E02295 /* [CP] Copy Pods Resources */,
+				48DA3845461DBC3A9345FB77 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -209,13 +234,25 @@
 		607FACC81AFB9204008FA782 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0830;
+				LastSwiftUpdateCheck = 0920;
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = CocoaPods;
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = 5YKZ4Y3DAW;
 						LastSwiftMigration = 0900;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
@@ -264,19 +301,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5FF5882471D7054294E02295 /* [CP] Copy Pods Resources */ = {
+		48DA3845461DBC3A9345FB77 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Cloudability/Cloudability.framework",
+				"${BUILT_PRODUCTS_DIR}/PromiseKit/PromiseKit.framework",
+				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
+				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 			);
-			name = "[CP] Copy Pods Resources";
+			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Cloudability.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PromiseKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests-resources.sh\"\n";
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		754D870B4F27DFFFEFAC76C9 /* [CP] Check Pods Manifest.lock */ = {
@@ -305,29 +351,20 @@
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Cloudability/Cloudability.framework",
+				"${BUILT_PRODUCTS_DIR}/PromiseKit/PromiseKit.framework",
+				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
+				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Cloudability.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PromiseKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E8DAE1A7E7A495DC95DAB43C /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		EA7EFD0047BF6C5ED2A6651F /* [CP] Check Pods Manifest.lock */ = {
@@ -348,21 +385,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		FE4666F7C70C9CBCE3F07E8F /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -370,8 +392,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13F5F2F1203DA6CE00CAB4EB /* FormBuilder.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
+				13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */,
+				13D2852520021270003E2BBA /* BattleShip.swift in Sources */,
+				13D2852420021270003E2BBA /* MobileSuit.swift in Sources */,
+				13D2852220021270003E2BBA /* Pilot.swift in Sources */,
+				13D2DEBB200B837C000B5DF4 /* DetailViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -379,7 +407,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607FACEC1AFB9204008FA782 /* Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,7 +485,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -504,7 +531,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -517,11 +544,16 @@
 			baseConfigurationReference = BA2078B033295A63EFEB4148 /* Pods-Cloudability_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cloudability_Example.entitlements;
+				DEVELOPMENT_TEAM = 5YKZ4Y3DAW;
 				INFOPLIST_FILE = Cloudability/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\"";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "CLOUDABILITYDEBUG DEBUG";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 			};
@@ -532,9 +564,13 @@
 			baseConfigurationReference = 62BBCE3E7D4E489210500B75 /* Pods-Cloudability_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Cloudability_Example.entitlements;
+				DEVELOPMENT_TEAM = 5YKZ4Y3DAW;
 				INFOPLIST_FILE = Cloudability/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\"";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
@@ -546,10 +582,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 157BE5BFEBE066064CF26CFA /* Pods-Cloudability_Tests.debug.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-				);
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -560,6 +593,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cloudability_Example.app/Cloudability_Example";
 			};
 			name = Debug;
 		};
@@ -567,16 +601,14 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A1324F57549CE42BFA0DA95D /* Pods-Cloudability_Tests.release.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-				);
+				FRAMEWORK_SEARCH_PATHS = "";
 				INFOPLIST_FILE = Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cloudability_Example.app/Cloudability_Example";
 			};
 			name = Release;
 		};
