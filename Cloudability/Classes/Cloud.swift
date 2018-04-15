@@ -209,7 +209,8 @@ extension Cloud {
             }.done { recordZones in
                 let existedZones = Set(recordZones.map({ $0.zoneID.zoneName }))
                 let requestedZones = Set(changeManager.allZoneIDs.map({ $0.zoneName }))
-                guard existedZones == requestedZones else { throw CloudError.zonesNotCreated }
+                guard requestedZones.isSubset(of: existedZones) else { throw CloudError.zonesNotCreated }
+            }.done {
                 cloud_log("Zones already created, will use them directly.")
                 seal.fulfill(())
             }.catch { error in // sadly zone was not created
@@ -221,9 +222,9 @@ extension Cloud {
                     when(fulfilled: zoneCreationPromises).done { recordZone in
                         cloud_log("Zones were successfully created.")
                         seal.fulfill(())
-                        }.catch { error in
-                            cloud_logError("Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
-                            seal.reject(error)
+                    }.catch { error in
+                        cloud_logError("Aborting Syncronization: Zone was not successfully created for some reasons, should try again later.")
+                        seal.reject(error)
                     }
                 } else {
                     cloud_logError(error.localizedDescription)
@@ -560,8 +561,7 @@ extension CKDatabase {
         if let operationQueue = operationQueue {
             operation.database = self
             operationQueue.addOperation(operation)
-        }
-        else {
+        } else {
             add(operation)
         }
     }
