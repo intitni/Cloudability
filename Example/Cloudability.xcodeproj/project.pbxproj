@@ -62,7 +62,7 @@
 		A1324F57549CE42BFA0DA95D /* Pods-Cloudability_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Tests/Pods-Cloudability_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		B0AACCFF96B877B56EF21327 /* Pods_Cloudability_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Cloudability_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA2078B033295A63EFEB4148 /* Pods-Cloudability_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Cloudability_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Cloudability_Example/Pods-Cloudability_Example.debug.xcconfig"; sourceTree = "<group>"; };
-		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; };
+		DFCD97B676123329D2B256B1 /* Cloudability.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = Cloudability.podspec; path = ../Cloudability.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
