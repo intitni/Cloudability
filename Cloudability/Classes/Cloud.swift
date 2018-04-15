@@ -12,12 +12,14 @@ import PromiseKit
 import RealmSwift
 
 public extension Notification.Name {
+    /// Post when account status not valid during sync.
     public static let iCloudAccountNotAvailable = Notification.Name(rawValue: "iCloudAccountNotAvailable")
 }
 
 public enum CloudError: Error {
     case alreadySyncing
     case alreadyOn
+    case notSwitchedOn
     case iCloudAccountNotAvailable
     case zonesNotCreated
     case somethingIsNil
@@ -95,9 +97,7 @@ extension Cloud {
         changeManager?.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
-        
-        pull { [weak self] in guard $0 else { return }; self?.push() } // syncronize at launch
-        
+        forceSyncronize()
         resumeLongLivedOperationsIfPossible()
     }
     
@@ -118,10 +118,15 @@ extension Cloud {
 // MARK: - Public
 
 extension Cloud {
+    public func forceSyncronize() {
+        Promise<Void> { seal in pull { seal.resolve($0) } }
+            .done { self.push() }
+            .cauterize()
+    }
     
     /// Start pull
-    public func pull(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
-        guard enabled else { completionHandler(false); return }
+    public func pull(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
+        guard enabled else { completionHandler(CloudError.notSwitchedOn); return }
         
         cloud_log("Start pull.")
         
@@ -134,30 +139,30 @@ extension Cloud {
         }.then {
             self.getChangesFromCloud()
         }.done {
-            completionHandler(true)
+            completionHandler(nil)
         }.ensure {
             self.finishBlock()
             cloud_log("Pull finished.")
-        }.catch {  error in
+        }.catch { error in
             cloud_logError(error.localizedDescription)
-            self.handlePushAndPullError(error: error)
+            self.postNotification(for: error)
             if !self.retryOperationIfPossible(with: error, block: { self.pull(completionHandler) }) {
-                completionHandler(false)
+                completionHandler(error)
             }
         }
     }
     
     /// Start push
-    public func push(_ completionHandler: @escaping (Bool)->Void = { _ in }) {
-        guard enabled, let changeManager = changeManager else { completionHandler(false); return }
+    public func push(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
+        guard enabled, let changeManager = changeManager else { completionHandler(CloudError.notSwitchedOn); return }
         let uploads = changeManager.generateAllUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
     }
 }
 
 extension Cloud {
-    private func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Bool)->Void = { _ in }) {
-        guard enabled else { completionHandler(false); return }
+    private func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Error?)->Void = { _ in }) {
+        guard enabled else { completionHandler(CloudError.notSwitchedOn); return }
         
         cloud_log("Start push.")
         
@@ -172,17 +177,17 @@ extension Cloud {
         }.then {
             self.pushChangesOntoCloud(modification: modification, deletion: deletion)
         }.done {
-            completionHandler(true)
+            completionHandler(nil)
         }.ensure {
             cloud_log("Push finished.")
         }.catch { error in
             cloud_logError(error.localizedDescription)
-            self.handlePushAndPullError(error: error)
+            self.postNotification(for: error)
             if !self.retryOperationIfPossible(
                 with: error,
                 block: { self.push(modification: modification, deletion: deletion, completionHandler: completionHandler) })
             {
-                completionHandler(false)
+                completionHandler(error)
             }
         }
     }
@@ -454,7 +459,7 @@ extension Cloud {
         }
     }
     
-    private func handlePushAndPullError(error: Error) {
+    private func postNotification(for error: Error) {
         switch error {
         case CloudError.iCloudAccountNotAvailable, CKError.notAuthenticated:
             NotificationCenter.default.post(Notification(name: .iCloudAccountNotAvailable))
