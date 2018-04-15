@@ -59,29 +59,6 @@ class ListViewController<ObjectType: CloudableObject & TestableObject>: UIViewCo
             }
             alert.addAction(save)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        case is MobileArmor.Type:
-            let alert = UIAlertController(title: "Add Mobile Armor", message: nil, preferredStyle: .alert)
-            alert.addTextField {
-                $0.accessibilityLabel = "number"
-                $0.placeholder = "number of pilots needed"
-                $0.keyboardType = .numberPad
-            }
-            alert.addTextField {
-                $0.accessibilityLabel = "type"
-                $0.placeholder = "type"
-            }
-            let save = UIAlertAction(title: "Add", style: .default) { action in
-                guard let number = alert.textFields?.filter({ $0.accessibilityLabel == "number" }).first,
-                    let type = alert.textFields?.filter({ $0.accessibilityLabel == "type" }).first,
-                    let t = type.text, let n = Int(number.text ?? ""), !t.isEmpty else { return }
-                let armor = MobileArmor(type: t, numberOfPilotsNeeded: n)
-                let realm = try! Realm()
-                try? realm.write {
-                    realm.add(armor)
-                }
-            }
-            alert.addAction(save)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         case is MobileSuit.Type:
             let alert = UIAlertController(title: "Add Mobile Suit", message: nil, preferredStyle: .alert)
             alert.addTextField {

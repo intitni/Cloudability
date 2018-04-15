@@ -41,4 +41,9 @@ class BattleShip: Object, Cloudable, TestableObject {
         self.name = name
         self.msCatapults = msCatapults
     }
+    
+    static func createRandom() -> BattleShip {
+        let names = ["Arc Angel"]
+        return BattleShip(name: names[names.indices.random], msCatapults: (5...10).random)
+    }
 }
