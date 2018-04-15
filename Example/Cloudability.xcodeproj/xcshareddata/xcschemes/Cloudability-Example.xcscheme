@@ -40,7 +40,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      language = ""
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
          <TestableReference
@@ -50,16 +49,6 @@
                BlueprintIdentifier = "607FACE41AFB9204008FA782"
                BuildableName = "Cloudability_Tests.xctest"
                BlueprintName = "Cloudability_Tests"
-               ReferencedContainer = "container:Cloudability.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "13D2852920025FE2003E2BBA"
-               BuildableName = "Cloudability_ExampleTest.xctest"
-               BlueprintName = "Cloudability_ExampleTest"
                ReferencedContainer = "container:Cloudability.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -80,7 +69,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      language = ""
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"

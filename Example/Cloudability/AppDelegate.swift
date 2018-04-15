@@ -3,7 +3,7 @@ import RealmSwift
 import Cloudability
 import CloudKit
 
-let container = CKContainer(identifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
+let container = Container(identifier: "iCloud.org.cocoapods.demo.Cloudability-Example.Custom")
 let cloud = Cloud(container: container, zoneType: .sameZone("zone"))
 
 @UIApplicationMain

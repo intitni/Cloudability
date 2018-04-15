@@ -44,14 +44,14 @@ public final class Cloud {
     private(set) var syncing = false
     private var cancelled = false
     
-    private let container: CKContainer
-    private let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
+    private let container: Container
+    private let databases: (private: Database, shared: Database, public: Database)
     
     private var serverChangeToken: CKServerChangeToken?
     
     private var finishBlock: ()->Void = {}
     
-    public init(container: CKContainer = .default(), zoneType: ZoneType = .defaultZone, onPullFinish finishBlock: @escaping ()->Void = {}) {
+    public init(container: Container = .default(), zoneType: ZoneType = .defaultZone, onPullFinish finishBlock: @escaping ()->Void = {}) {
         self.zoneType = zoneType
         self.container = container
         databases = (container.privateCloudDatabase, container.sharedCloudDatabase, container.publicCloudDatabase)
@@ -299,7 +299,7 @@ extension Cloud {
         }
     }
     
-    private func fetchChanges(from zoneIDs: [CKRecordZoneID], in database: CKDatabase)
+    private func fetchChanges(from zoneIDs: [CKRecordZoneID], in database: Database)
         -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: [CKRecordZoneID : CKServerChangeToken])> {
         return Promise { seal in
             
@@ -388,35 +388,35 @@ extension Cloud {
         cloud_log("Unsubscribe to database changes.")
         
         if Defaults.subscribedToPrivateDatabase {
-            databases.private.delete(withSubscriptionID: "Private") { [weak self] _, error in
-                if error == nil {
-                    Defaults.subscribedToPrivateDatabase = false
-                    cloud_log("Successfully unsubscribed to private database.")
-                    return
-                }
-                cloud_log("Failed to unsubscribe to private database, may retry later. \(error?.localizedDescription ?? "")")
-                self?.retryOperationIfPossible(with: error) {
-                    self?.unsubscribeToDatabaseChanges()
+            firstly {
+                databases.private.delete(withSubscriptionID: "Private")
+            }.done {_ in
+                Defaults.subscribedToPrivateDatabase = false
+                cloud_log("Successfully unsubscribed to private database.")
+            }.catch { error in
+                cloud_log("Failed to unsubscribe to private database, may retry later. \(error.localizedDescription)")
+                self.retryOperationIfPossible(with: error) {
+                    self.unsubscribeToDatabaseChanges()
                 }
             }
         }
         
         if Defaults.subscribedToSharedDatabase {
-            databases.shared.delete(withSubscriptionID: "Shared") { [weak self] _, error in
-                if error == nil {
-                    Defaults.subscribedToSharedDatabase = false
-                    cloud_log("Successfully unsubscribed to shared database.")
-                    return
-                }
-                cloud_log("Failed to unsubscribe to shared database, may retry later. \(error?.localizedDescription ?? "")")
-                self?.retryOperationIfPossible(with: error) {
-                    self?.unsubscribeToDatabaseChanges()
+            firstly {
+                databases.shared.delete(withSubscriptionID: "Shared")
+            }.done { _ in
+                Defaults.subscribedToSharedDatabase = false
+                cloud_log("Successfully unsubscribed to shared database.")
+            }.catch { error in
+                cloud_log("Failed to unsubscribe to shared database, may retry later. \(error.localizedDescription)")
+                self.retryOperationIfPossible(with: error) {
+                    self.unsubscribeToDatabaseChanges()
                 }
             }
         }
     }
     
-    private func pushChanges(to database: CKDatabase, saving save: [CKRecord], deleting deletion: [CKRecordID])
+    private func pushChanges(to database: Database, saving save: [CKRecord], deleting deletion: [CKRecordID])
         -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> {
         return Promise { seal in
             let operation = CKModifyRecordsOperation(recordsToSave: save, recordIDsToDelete: deletion)
@@ -541,30 +541,6 @@ extension Cloud {
     }
 }
 
-extension CKDatabase {
-    func addDatabaseSubscription(subscriptionID: String, operationQueue: OperationQueue? = nil,
-                                 completionHandler: @escaping (NSError?) -> Void) {
-        
-        let subscription = CKDatabaseSubscription(subscriptionID: subscriptionID)
-        
-        let notificationInfo = CKNotificationInfo()
-        notificationInfo.shouldSendContentAvailable = true
-        
-        subscription.notificationInfo = notificationInfo
-        
-        let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: nil)
-        
-        operation.modifySubscriptionsCompletionBlock = { _, _, error in
-            completionHandler(error as NSError?)
-        }
-        
-        if let operationQueue = operationQueue {
-            operation.database = self
-            operationQueue.addOperation(operation)
-        } else {
-            add(operation)
-        }
-    }
-}
+
 
 

@@ -4,13 +4,16 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '10.0'
 use_frameworks!
 
-target 'Cloudability_Example' do
-  pod 'Cloudability', :path => '../'
+def sharedPods
+    pod 'Cloudability', :path => '../'
+end
 
-  target 'Cloudability_Tests' do
-    inherit! :search_paths
-    
-  end
+target 'Cloudability_Example' do
+  sharedPods
+end
+
+target 'Cloudability_Tests' do
+  sharedPods
 end
 
 post_install do |installer|
