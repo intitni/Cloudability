@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		136723151FF6A1A4007AF534 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 136723141FF6A1A4007AF534 /* CloudKit.framework */; };
 		13D2852220021270003E2BBA /* Pilot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8AE1FD3FC7F0019A524 /* Pilot.swift */; };
-		13D2852320021270003E2BBA /* MobileArmor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B01FD3FC890019A524 /* MobileArmor.swift */; };
 		13D2852420021270003E2BBA /* MobileSuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */; };
 		13D2852520021270003E2BBA /* BattleShip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B61FD3FD030019A524 /* BattleShip.swift */; };
 		13D2852D20025FE2003E2BBA /* Cloudability_ExampleTests2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2852C20025FE2003E2BBA /* Cloudability_ExampleTests2.swift */; };
@@ -47,7 +46,6 @@
 
 /* Begin PBXFileReference section */
 		1348F8AE1FD3FC7F0019A524 /* Pilot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pilot.swift; sourceTree = "<group>"; };
-		1348F8B01FD3FC890019A524 /* MobileArmor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileArmor.swift; sourceTree = "<group>"; };
 		1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSuit.swift; sourceTree = "<group>"; };
 		1348F8B61FD3FD030019A524 /* BattleShip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleShip.swift; sourceTree = "<group>"; };
 		1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectConverterTests.swift; sourceTree = "<group>"; };
@@ -176,7 +174,6 @@
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
 				1348F8AE1FD3FC7F0019A524 /* Pilot.swift */,
-				1348F8B01FD3FC890019A524 /* MobileArmor.swift */,
 				1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */,
 				1348F8B61FD3FD030019A524 /* BattleShip.swift */,
 			);
@@ -494,7 +491,6 @@
 			files = (
 				13F5F2F1203DA6CE00CAB4EB /* FormBuilder.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
-				13D2852320021270003E2BBA /* MobileArmor.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */,
 				13D2852520021270003E2BBA /* BattleShip.swift in Sources */,

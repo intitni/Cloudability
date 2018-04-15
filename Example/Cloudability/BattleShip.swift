@@ -17,8 +17,7 @@ class BattleShip: Object, Cloudable, TestableObject {
         return "id"
     }
     
-    var mobileSuits = List<MobileSuit>()
-    var mobileArmors = List<MobileArmor>()
+    let mobileSuits = LinkingObjects(fromType: MobileSuit.self, property: "onShip")
     @objc dynamic var name = ""
     @objc dynamic var msCatapults = 1
     
@@ -33,9 +32,7 @@ class BattleShip: Object, Cloudable, TestableObject {
         
         ----------
         Mobile Suits: \(mobileSuits)
-        
-        ----------
-        Mobile Armors: \(mobileArmors)
+
         """
     }
     

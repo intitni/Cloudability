@@ -30,10 +30,41 @@ class Pilot: Object, Cloudable, TestableObject {
     
     @objc dynamic var name = ""
     @objc dynamic var age = 18
+    var piloting: MobileSuit? = nil
     
     convenience init(name: String, age: Int) {
         self.init()
         self.name = name
         self.age = age
+    }
+    
+    static func createRandom() -> Pilot {
+        let firstnames = [
+            "Sarah", "Tom", "John", "Johnson", "Tim", "Steve", "Laura", "Sam", "Satoshi"
+        ]
+        let lastnames = [
+            "Battlefiled", "Greenfield", "Strange", "Stark", "Lockon", "Jobs", "Cook", "Yip", "Yamada",
+        ]
+        let firstname = firstnames[firstnames.indices.random]
+        let lastname = lastnames[lastnames.indices.random]
+        return Pilot(name: "\(firstname) \(lastname)", age: (15...50).random)
+    }
+}
+
+extension Range where Bound == Int {
+    var random: Int {
+        return Int(arc4random_uniform(UInt32(upperBound - lowerBound))) + lowerBound
+    }
+}
+
+extension ClosedRange where Bound == Int {
+    var random: Int {
+        return Int(arc4random_uniform(UInt32(upperBound - lowerBound + 1))) + lowerBound
+    }
+}
+
+extension CountableRange where Bound == Int {
+    var random: Int {
+        return Int(arc4random_uniform(UInt32(upperBound - lowerBound + 1))) + lowerBound
     }
 }
