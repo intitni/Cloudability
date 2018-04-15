@@ -11,10 +11,6 @@
 		13D2852220021270003E2BBA /* Pilot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8AE1FD3FC7F0019A524 /* Pilot.swift */; };
 		13D2852420021270003E2BBA /* MobileSuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B21FD3FC9D0019A524 /* MobileSuit.swift */; };
 		13D2852520021270003E2BBA /* BattleShip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B61FD3FD030019A524 /* BattleShip.swift */; };
-		13D2852D20025FE2003E2BBA /* Cloudability_ExampleTests2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2852C20025FE2003E2BBA /* Cloudability_ExampleTests2.swift */; };
-		13D2853420026045003E2BBA /* ObjectConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1348F8B81FD3FE9C0019A524 /* ObjectConverterTests.swift */; };
-		13D2853520026045003E2BBA /* ChangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136723021FF3D7A9007AF534 /* ChangeManagerTests.swift */; };
-		13D2853620026045003E2BBA /* CloudTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136723111FF53D5E007AF534 /* CloudTests.swift */; };
 		13D2DEB9200B5F56000B5DF4 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */; };
 		13D2DEBB200B837C000B5DF4 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */; };
 		13F5F2F1203DA6CE00CAB4EB /* FormBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F5F2F0203DA6CE00CAB4EB /* FormBuilder.swift */; };
@@ -28,13 +24,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		13D2852F20025FE2003E2BBA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 607FACC81AFB9204008FA782 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 607FACCF1AFB9204008FA782;
-			remoteInfo = Cloudability_Example;
-		};
 		607FACE61AFB9204008FA782 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 607FACC81AFB9204008FA782 /* Project object */;
@@ -53,9 +42,6 @@
 		136723111FF53D5E007AF534 /* CloudTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTests.swift; sourceTree = "<group>"; };
 		136723131FF6A19D007AF534 /* Cloudability_Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cloudability_Example.entitlements; sourceTree = "<group>"; };
 		136723141FF6A1A4007AF534 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
-		13D2852A20025FE2003E2BBA /* Cloudability_ExampleTest.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Cloudability_ExampleTest.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		13D2852C20025FE2003E2BBA /* Cloudability_ExampleTests2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cloudability_ExampleTests2.swift; sourceTree = "<group>"; };
-		13D2852E20025FE2003E2BBA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		13D2DEB8200B5F56000B5DF4 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
 		13D2DEBA200B837C000B5DF4 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		13F5F2F0203DA6CE00CAB4EB /* FormBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormBuilder.swift; sourceTree = "<group>"; };
@@ -80,13 +66,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		13D2852720025FE2003E2BBA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		607FACCD1AFB9204008FA782 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,15 +107,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		13D2852B20025FE2003E2BBA /* Cloudability_ExampleTests2 */ = {
-			isa = PBXGroup;
-			children = (
-				13D2852C20025FE2003E2BBA /* Cloudability_ExampleTests2.swift */,
-				13D2852E20025FE2003E2BBA /* Info.plist */,
-			);
-			path = Cloudability_ExampleTests2;
-			sourceTree = "<group>";
-		};
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
@@ -144,7 +114,6 @@
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
 				607FACD21AFB9204008FA782 /* Example for Cloudability */,
 				607FACE81AFB9204008FA782 /* Tests */,
-				13D2852B20025FE2003E2BBA /* Cloudability_ExampleTests2 */,
 				607FACD11AFB9204008FA782 /* Products */,
 				0A0622420D1E4F62B2D0A8AC /* Pods */,
 				0C659F42422CEB48EE1E1166 /* Frameworks */,
@@ -156,7 +125,6 @@
 			children = (
 				607FACD01AFB9204008FA782 /* Cloudability_Example.app */,
 				607FACE51AFB9204008FA782 /* Cloudability_Tests.xctest */,
-				13D2852A20025FE2003E2BBA /* Cloudability_ExampleTest.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -221,24 +189,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13D2852920025FE2003E2BBA /* Cloudability_ExampleTest */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 13D2853120025FE2003E2BBA /* Build configuration list for PBXNativeTarget "Cloudability_ExampleTest" */;
-			buildPhases = (
-				13D2852620025FE2003E2BBA /* Sources */,
-				13D2852720025FE2003E2BBA /* Frameworks */,
-				13D2852820025FE2003E2BBA /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				13D2853020025FE2003E2BBA /* PBXTargetDependency */,
-			);
-			name = Cloudability_ExampleTest;
-			productName = Cloudability_ExampleTests2;
-			productReference = 13D2852A20025FE2003E2BBA /* Cloudability_ExampleTest.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		607FACCF1AFB9204008FA782 /* Cloudability_Example */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "Cloudability_Example" */;
@@ -290,11 +240,6 @@
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = CocoaPods;
 				TargetAttributes = {
-					13D2852920025FE2003E2BBA = {
-						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Automatic;
-						TestTargetID = 607FACCF1AFB9204008FA782;
-					};
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
 						DevelopmentTeam = 5YKZ4Y3DAW;
@@ -333,19 +278,11 @@
 			targets = (
 				607FACCF1AFB9204008FA782 /* Cloudability_Example */,
 				607FACE41AFB9204008FA782 /* Cloudability_Tests */,
-				13D2852920025FE2003E2BBA /* Cloudability_ExampleTest */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		13D2852820025FE2003E2BBA /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		607FACCE1AFB9204008FA782 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -474,17 +411,6 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		13D2852620025FE2003E2BBA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				13D2853520026045003E2BBA /* ChangeManagerTests.swift in Sources */,
-				13D2853620026045003E2BBA /* CloudTests.swift in Sources */,
-				13D2852D20025FE2003E2BBA /* Cloudability_ExampleTests2.swift in Sources */,
-				13D2853420026045003E2BBA /* ObjectConverterTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		607FACCC1AFB9204008FA782 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -510,11 +436,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		13D2853020025FE2003E2BBA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 607FACCF1AFB9204008FA782 /* Cloudability_Example */;
-			targetProxy = 13D2852F20025FE2003E2BBA /* PBXContainerItemProxy */;
-		};
 		607FACE71AFB9204008FA782 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 607FACCF1AFB9204008FA782 /* Cloudability_Example */;
@@ -542,54 +463,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		13D2853220025FE2003E2BBA /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = Cloudability_ExampleTests2/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.intii.Cloudability-ExampleTests2";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 4.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cloudability_Example.app/Cloudability_Example";
-			};
-			name = Debug;
-		};
-		13D2853320025FE2003E2BBA /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = Cloudability_ExampleTests2/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.intii.Cloudability-ExampleTests2";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cloudability_Example.app/Cloudability_Example";
-			};
-			name = Release;
-		};
 		607FACED1AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -765,15 +638,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13D2853120025FE2003E2BBA /* Build configuration list for PBXNativeTarget "Cloudability_ExampleTest" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				13D2853220025FE2003E2BBA /* Debug */,
-				13D2853320025FE2003E2BBA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		607FACCB1AFB9204008FA782 /* Build configuration list for PBXProject "Cloudability" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
