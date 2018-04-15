@@ -47,7 +47,7 @@ public final class Cloud {
     private let container: CKContainer
     private let databases: (private: CKDatabase, shared: CKDatabase, public: CKDatabase)
     
-    private var serverChangeToken = Defaults.serverChangeToken
+    private var serverChangeToken: CKServerChangeToken?
     
     private var finishBlock: ()->Void = {}
     
@@ -92,6 +92,7 @@ extension Cloud {
     
     private func _switchOn() {
         enabled = true
+        serverChangeToken = Defaults.serverChangeToken
         changeManager = ChangeManager(zoneType: zoneType)
         changeManager?.observer = self
         changeManager?.setupSyncedEntitiesIfNeeded()
@@ -110,6 +111,13 @@ extension Cloud {
     }
     
     private func tearDown() {
+        Defaults.serverChangeToken = nil
+        serverChangeToken = nil
+        if let allZonesID = changeManager?.allZoneIDs {
+            for zoneID in allZonesID {
+                Defaults.setZoneChangeToken(to: nil, forZoneID: zoneID)
+            }
+        }
         changeManager?.tearDown()
         unsubscribeToDatabaseChanges()
     }
@@ -491,6 +499,8 @@ extension Cloud {
             set {
                 if let token = newValue {
                     UserDefaults.standard.set(NSKeyedArchiver.archivedData(withRootObject: token), forKey: serverChangeTokenKey)
+                } else {
+                    UserDefaults.standard.set(nil, forKey: serverChangeTokenKey)
                 }
             }
         }
@@ -505,6 +515,8 @@ extension Cloud {
         static func setZoneChangeToken(to token: CKServerChangeToken?, forZoneName name: String) {
             if let token = token {
                 UserDefaults.standard.set(NSKeyedArchiver.archivedData(withRootObject: token), forKey: zoneChangeTokenKey(zoneName: name))
+            } else {
+                UserDefaults.standard.set(nil, forKey: zoneChangeTokenKey(zoneName: name))
             }
         }
         
