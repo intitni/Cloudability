@@ -30,6 +30,8 @@ Pod::Spec.new do |s|
 
   s.source_files = 'Cloudability/Classes/**/*'
   
+  s.swift_version = '4.1'
+  
   # s.resource_bundles = {
   #   'Cloudability' => ['Cloudability/Assets/*.png']
   # }
