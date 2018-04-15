@@ -13,20 +13,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        // excluding Cloudability objects
+        Realm.Configuration.defaultConfiguration.objectTypes = [
+            Pilot.self,
+            MobileSuit.self,
+            BattleShip.self
+        ]
         
         application.registerForRemoteNotifications()
         cloud.switchOn { error in
             print(error?.localizedDescription ?? "Switched on!")
         }
  
-        // excluding Cloudability objects
-        Realm.Configuration.defaultConfiguration.objectTypes = [
-            Pilot.self,
-            MobileArmor.self,
-            MobileSuit.self,
-            BattleShip.self
-        ]
-        
         return true
     }
     

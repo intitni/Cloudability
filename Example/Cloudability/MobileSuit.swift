@@ -19,7 +19,7 @@ class MobileSuit: Object, Cloudable, TestableObject {
     
     @objc dynamic var type = ""
     let pilots = LinkingObjects(fromType: Pilot.self, property: "piloting")
-    var onShip: BattleShip? = nil
+    @objc dynamic var onShip: BattleShip? = nil
     
     var title: String { return type + " " + id }
     

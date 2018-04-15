@@ -30,7 +30,7 @@ class Pilot: Object, Cloudable, TestableObject {
     
     @objc dynamic var name = ""
     @objc dynamic var age = 18
-    var piloting: MobileSuit? = nil
+    @objc dynamic var piloting: MobileSuit? = nil
     
     convenience init(name: String, age: Int) {
         self.init()
