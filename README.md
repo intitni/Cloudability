@@ -29,7 +29,7 @@ When you delete an `Cloudable` object, please use `realm.delete(cloudableObject:
 
 Optionally,
 
-- Exclude `PendingNotification` and `SyncedEntity` from your realm configuration. Though they are stored in another realm file in documents/cloudability.realm.
+- Exclude `PendingRelationship` and `SyncedEntity` from your realm configuration. Though they are stored in another realm file in documents/cloudability.realm.
 - Listen to push notifications.
     By default, Cloudability creates database subscriptions for private and shared database. You can call `cloud.pull(completionHandler:)` when you recieve a notification.
 - Conform your objects to `HasAfterMergeAction` and `HasBeforeDeletionAction`.
