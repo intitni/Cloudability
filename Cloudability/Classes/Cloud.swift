@@ -25,6 +25,11 @@ public enum CloudError: Error {
     case somethingIsNil
 }
 
+public enum SwitchOnRule {
+    case replaceCloud
+    case merge
+}
+
 public enum ZoneType {
     /// Use the defualtZone.
     case defaultZone
@@ -73,19 +78,22 @@ extension Cloud: ChangeManagerObserver {
 // MARK: - Switch On / Off
 
 extension Cloud {
-    public func switchOn(completionHandler: @escaping (Error?) -> Void) {
+    public func switchOn(rule: SwitchOnRule = .merge, completionHandler: @escaping (Error?) -> Void) {
         guard !enabled else { completionHandler(CloudError.alreadyOn); return }
         firstly {
             container.accountStatus()
-        }.done(on: DispatchQueue.main) { status in
+        }.done { status in
             switch status {
-            case .available:
-                self._switchOn()
-                completionHandler(nil)
             case .couldNotDetermine, .restricted, .noAccount:
-                completionHandler(CloudError.iCloudAccountNotAvailable)
+                throw CloudError.iCloudAccountNotAvailable
+            default: break
             }
-        }.catch(on: DispatchQueue.main) { error in
+        }.then {
+            self.deleteAllZonesInCloudIfNeeded(rule == .replaceCloud)
+        }.done {
+            self._switchOn()
+            completionHandler(nil)
+        }.catch { error in
             completionHandler(error)
         }
     }
@@ -102,12 +110,13 @@ extension Cloud {
         resumeLongLivedOperationsIfPossible()
     }
     
-    public func switchOff() {
+    public func switchOff(deleteAll: Bool = false) {
         guard enabled else { return }
         enabled = false
         tearDown()
         changeManager = nil
         unsubscribeToDatabaseChanges()
+        deleteAllZonesInCloud()
     }
     
     private func tearDown() {
@@ -165,6 +174,18 @@ extension Cloud {
         guard enabled, let changeManager = changeManager else { completionHandler(CloudError.notSwitchedOn); return }
         let uploads = changeManager.generateAllUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
+    }
+    
+    public func deleteAllZonesInCloud(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
+        firstly {
+            self.deleteAllZonesInCloudIfNeeded(true)
+        }.done { _ in
+            completionHandler(nil)
+        }.catch { error in
+            if !self.retryOperationIfPossible(with: error, block: { self.deleteAllZonesInCloud() }) {
+                completionHandler(error)
+            }
+        }
     }
 }
 
@@ -429,6 +450,19 @@ extension Cloud {
             operation.qualityOfService = .utility
             database.add(operation)
         }
+    }
+    
+    private func deleteAllZonesInCloudIfNeeded(_ needed: Bool) -> Promise<Void> {
+        guard needed else { return Promise() }
+        return firstly {
+            self.databases.private.fetchAllRecordZones()
+        }.then { zones in
+            when(fulfilled: zones.map({ self.databases.private.delete(withRecordZoneID: $0.zoneID) }))
+        }.then { _ in
+            self.databases.shared.fetchAllRecordZones()
+        }.then { zones in
+            when(fulfilled: zones.map({ self.databases.shared.delete(withRecordZoneID: $0.zoneID) }))
+        }.done { _ in }
     }
     
     private func resumeLongLivedOperationsIfPossible() {
