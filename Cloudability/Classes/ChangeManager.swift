@@ -373,30 +373,30 @@ extension ChangeManager {
     /// Observe all Cloudable object lists, for insertions and modifications.
     private func setupLocalDatabaseObservations() {
         let realm = try! Realm()
-        for schema in realm.schema.objectSchema {
-            let objClass = realmObjectType(forName: schema.className)
-            guard let objectClass = objClass as? CloudableObject.Type else { continue }
-            let results = realm.objects(objectClass)
-            
+        realm.enumerateCloudableLists { results, objectClass in
             let token = results.observe { [weak self] change in
+                guard let ego = self else { return }
                 switch change {
                 case .initial: break
                 case .error(let e): cloud_logError(e.localizedDescription)
                     
-                // We should not see any true deletion, soft deletion should be used in Cloudable objects if you want it to be observed.
-                // Or you may use `realm.delete(cloudableObject:)` to delete objects.
+                // We will not see any useful information about deletion.
+                // Soft deletion should be used in Cloudable objects if you want it to be here as modification.
+                // Or you may use `realm.delete(cloudableObject:)` to delete objects to update `SyncedEntity` in advance.
                 case let .update(result, _, insertion, modification):
                     cloud_log("Change detected.")
-                    guard let ego = self else { return }
-                    
-                    /// All insertions and modifications, not marked as soft deleted
+        
+                    /// All insertions and modifications
                     let m: [CloudableObject] = (insertion + modification)
                         .filter { $0 < result.count }
                         .map { result[$0] as! CloudableObject }
                     
+                    // Update `SyncedEntity`s for these modifications.
                     ego.handleHelperObjectChangesDueToLocalModification(modification: m)
+                    // Generate uploads for both deletions and modifications, according to states of `SyncedEntity`s.
                     let uploads = ego.generateUploads(for: objectClass)
-                    guard !uploads.modification.isEmpty || !uploads.deletion.isEmpty else { return }
+                    guard !(uploads.modification.isEmpty && uploads.deletion.isEmpty) else { return }
+                    // Tell observer that changes happened.
                     ego.observer?.changeManagerDidObserveChanges(modification: uploads.modification, deletion: uploads.deletion)
                 }
             }
