@@ -53,4 +53,8 @@ public extension Container {
     func fetchLongLivedOperation(withID id: String, completionHandler: @escaping (CKOperation?, Error?)->Void) {
         ckContainer.fetchLongLivedOperation(withID: id, completionHandler: completionHandler)
     }
+    
+    func fetchLongLivedOperation(withID id: String) -> Promise<CKOperation?> {
+        return Promise { fetchLongLivedOperation(withID: id, completionHandler: $0.resolve) }
+    }
 }

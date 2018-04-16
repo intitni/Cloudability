@@ -466,23 +466,27 @@ extension Cloud {
     }
     
     private func resumeLongLivedOperationsIfPossible() {
-        container.fetchAllLongLivedOperationIDs { [weak self] operationIDs, error in
-            guard error == nil else { return }
-            guard let operationIDs = operationIDs else { return }
-            for id in operationIDs {
-                self?.container.fetchLongLivedOperation(withID: id, completionHandler: { operation, error in
-                    guard error == nil else { return }
-                    if let operation = operation as? CKModifyRecordsOperation {
-                        operation.modifyRecordsCompletionBlock = { saved, deleted, error in
-                            cloud_log("Resume modify records operation.")
-                            guard error == nil else { return }
-                            self?.changeManager?.finishUploads(saved: saved, deleted: deleted)
-                        }
-                        // TODO: Crashing here
-                        self?.databases.private.add(operation)
+        firstly {
+            self.container.fetchAllLongLivedOperationIDs()
+        }.map { ids -> [String] in
+            guard let ids = ids else { throw CloudError.somethingIsNil }
+            return ids
+        }.then { ids in
+            when(fulfilled: ids.map({ self.container.fetchLongLivedOperation(withID:$0) }))
+        }.compactMap { operations in
+            for op in operations {
+                if let op = op as? CKModifyRecordsOperation {
+                    op.modifyRecordsCompletionBlock = { saved, deleted, error in
+                        cloud_log("Resume modify records operation.")
+                        guard error == nil else { return }
+                        self.changeManager?.finishUploads(saved: saved, deleted: deleted)
                     }
-                })
+                    // TODO: Crashing here
+                    self.databases.private.add(op)
+                }
             }
+        }.catch { error in
+            cloud_logError("Unable to resume long lived operations. \(error.localizedDescription)")
         }
     }
     
