@@ -78,6 +78,12 @@ extension Cloud: ChangeManagerObserver {
 // MARK: - Switch On / Off
 
 extension Cloud {
+    
+    /// Switch on `Cloud` if
+    ///
+    /// - It's not already enabled.
+    /// - User has logged in to iCloud.
+    /// - If user asks to replace data in cloud, deletion is successful.
     public func switchOn(rule: SwitchOnRule = .merge, completionHandler: @escaping (Error?) -> Void) {
         guard !enabled else { completionHandler(CloudError.alreadyOn); return }
         firstly {
@@ -98,6 +104,11 @@ extension Cloud {
         }
     }
     
+    /// 1. Get latest server change token.
+    /// 2. Setup `changeManager`.
+    /// 3. Subscribe to database changes if not already done.
+    /// 4. Listen to Application Will Terminate notification.
+    /// 5. Sync
     private func _switchOn() {
         enabled = true
         serverChangeToken = Defaults.serverChangeToken
@@ -107,19 +118,21 @@ extension Cloud {
         subscribeToDatabaseChangesIfNeeded()
         NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
         forceSyncronize()
-        resumeLongLivedOperationsIfPossible()
+        // resumeLongLivedOperationsIfPossible()
     }
     
     public func switchOff(deleteAll: Bool = false) {
         guard enabled else { return }
         enabled = false
-        tearDown()
-        changeManager = nil
-        unsubscribeToDatabaseChanges()
-        deleteAllZonesInCloud()
+        tearDown(deleteAll: deleteAll)
     }
     
-    private func tearDown() {
+    /// 1. Reset server change token.
+    /// 2. Reset zone ID change token.
+    /// 3. Tear down `changeManager`.
+    /// 4. Unsubscribe to database changes.
+    /// 5. Delete contents from cloud if needed.
+    private func tearDown(deleteAll: Bool = false) {
         Defaults.serverChangeToken = nil
         serverChangeToken = nil
         if let allZonesID = changeManager?.allZoneIDs {
@@ -128,7 +141,9 @@ extension Cloud {
             }
         }
         changeManager?.tearDown()
+        changeManager = nil
         unsubscribeToDatabaseChanges()
+        if deleteAll { deleteAllZonesInCloud() }
     }
 }
 
@@ -141,7 +156,7 @@ extension Cloud {
             .cauterize()
     }
     
-    /// Start pull
+    /// Start pull.
     public func pull(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
         guard enabled else { completionHandler(CloudError.notSwitchedOn); return }
         
@@ -169,13 +184,14 @@ extension Cloud {
         }
     }
     
-    /// Start push
+    /// Start push.
     public func push(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
         guard enabled, let changeManager = changeManager else { completionHandler(CloudError.notSwitchedOn); return }
         let uploads = changeManager.generateAllUploads()
         push(modification: uploads.modification, deletion: uploads.deletion, completionHandler: completionHandler)
     }
     
+    /// Delete all zones and it's content from both private and shared database.
     public func deleteAllZonesInCloud(_ completionHandler: @escaping (Error?)->Void = { _ in }) {
         firstly {
             self.deleteAllZonesInCloudIfNeeded(true)
