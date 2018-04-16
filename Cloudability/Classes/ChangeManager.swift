@@ -383,7 +383,8 @@ extension ChangeManager {
                 case .initial: break
                 case .error(let e): cloud_logError(e.localizedDescription)
                     
-                // We should not see any true deletion, soft deletion should be used in Cloudable objects.
+                // We should not see any true deletion, soft deletion should be used in Cloudable objects if you want it to be observed.
+                // Or you may use `realm.delete(cloudableObject:)` to delete objects.
                 case let .update(result, _, insertion, modification):
                     cloud_log("Change detected.")
                     guard let ego = self else { return }

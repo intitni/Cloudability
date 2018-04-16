@@ -22,14 +22,15 @@ public extension Realm {
     /// This method may only be called during a write transaction.
     public func delete(cloudableObject: CloudableObject) {
         let id = cloudableObject.pkProperty
-        delete(cloudableObject)
-        
+
         let cRealm = Realm.cloudRealm
         try? cRealm.safeWrite {
             guard let syncedEntity = cRealm.object(ofType: SyncedEntity.self, forPrimaryKey: id)
                 else { return }
             syncedEntity.changeState = .deleted
         }
+        
+        delete(cloudableObject)
     }
     
     /// Write that starts transaction only when it's not in transaction.
