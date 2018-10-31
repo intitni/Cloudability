@@ -62,9 +62,3 @@ extension ClosedRange where Bound == Int {
         return Int(arc4random_uniform(UInt32(upperBound - lowerBound + 1))) + lowerBound
     }
 }
-
-extension CountableRange where Bound == Int {
-    var random: Int {
-        return Int(arc4random_uniform(UInt32(upperBound - lowerBound + 1))) + lowerBound
-    }
-}

@@ -21,7 +21,7 @@ class Database {
     }
     
     /// Fetches one record zone asynchronously from the current database.
-    public func fetch(withRecordZoneID recordZoneID: CKRecordZoneID) -> Promise<CKRecordZone> {
+    public func fetch(withRecordZoneID recordZoneID: CKRecordZone.ID) -> Promise<CKRecordZone> {
         return ckDatabase.fetch(withRecordZoneID: recordZoneID)
     }
     
@@ -41,12 +41,12 @@ class Database {
     }
     
     /// Delete one subscription object asynchronously from the current database.
-    public func delete(withRecordID recordID: CKRecordID) -> Promise<CKRecordID> {
+    public func delete(withRecordID recordID: CKRecord.ID) -> Promise<CKRecord.ID> {
         return ckDatabase.delete(withRecordID: recordID)
     }
     
     /// Delete one subscription object asynchronously from the current database.
-    public func delete(withRecordZoneID zoneID: CKRecordZoneID) -> Promise<CKRecordZoneID> {
+    public func delete(withRecordZoneID zoneID: CKRecordZone.ID) -> Promise<CKRecordZone.ID> {
         return ckDatabase.delete(withRecordZoneID: zoneID)
     }
     
@@ -77,7 +77,7 @@ class Database {
         
         let subscription = CKDatabaseSubscription(subscriptionID: subscriptionID)
         
-        let notificationInfo = CKNotificationInfo()
+        let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true
         
         subscription.notificationInfo = notificationInfo

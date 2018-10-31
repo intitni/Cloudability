@@ -38,7 +38,7 @@ public enum ZoneType {
     /// Use 1 custom zone for all record types.
     case sameZone(String)
     /// Provide a rule that returns a zone ID for each type.
-    case customRule((CloudableObject.Type) -> CKRecordZoneID)
+    case customRule((CloudableObject.Type) -> CKRecordZone.ID)
 }
 
 public final class Cloud {
@@ -70,7 +70,7 @@ public final class Cloud {
 }
 
 extension Cloud: ChangeManagerObserver {
-    func changeManagerDidObserveChanges(modification: [CKRecord], deletion: [CKRecordID]) {
+    func changeManagerDidObserveChanges(modification: [CKRecord], deletion: [CKRecord.ID]) {
         push(modification: modification, deletion: deletion)
     }
 }
@@ -116,7 +116,7 @@ extension Cloud {
         changeManager?.observer = self
         changeManager?.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
-        NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: .UIApplicationWillTerminate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
         forceSyncronize()
         // resumeLongLivedOperationsIfPossible()
     }
@@ -206,7 +206,7 @@ extension Cloud {
 }
 
 extension Cloud {
-    private func push(modification: [CKRecord], deletion: [CKRecordID], completionHandler: @escaping (Error?)->Void = { _ in }) {
+    private func push(modification: [CKRecord], deletion: [CKRecord.ID], completionHandler: @escaping (Error?)->Void = { _ in }) {
         guard enabled else { completionHandler(CloudError.notSwitchedOn); return }
         
         cloud_log("Start push.")
@@ -295,7 +295,7 @@ extension Cloud {
             }
     }
     
-    private func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecordID]) -> Promise<Void> {
+    private func pushChangesOntoCloud(modification: [CKRecord], deletion: [CKRecord.ID]) -> Promise<Void> {
         return firstly {
                 return self.pushChanges(to: self.databases.private, saving: modification, deleting: deletion)
             }.done(on: DispatchQueue.main) { saved, deleted in
@@ -305,11 +305,11 @@ extension Cloud {
             }
     }
     
-    private func fetchChangesInDatabase() -> Promise<[CKRecordZoneID]> {
+    private func fetchChangesInDatabase() -> Promise<[CKRecordZone.ID]> {
         return Promise { [weak self] seal in
             cloud_log("Fetch changes in private database.")
             
-            var zoneIDs = [CKRecordZoneID]()
+            var zoneIDs = [CKRecordZone.ID]()
             
             let operation = CKFetchDatabaseChangesOperation(previousServerChangeToken: Defaults.serverChangeToken)
             operation.fetchAllChanges = true
@@ -336,8 +336,8 @@ extension Cloud {
         }
     }
     
-    private func fetchChanges(from zoneIDs: [CKRecordZoneID], in database: Database)
-        -> Promise<(toSave: [CKRecord], toDelete: [CKRecordID], lastChangeToken: [CKRecordZoneID : CKServerChangeToken])> {
+    private func fetchChanges(from zoneIDs: [CKRecordZone.ID], in database: Database)
+        -> Promise<(toSave: [CKRecord], toDelete: [CKRecord.ID], lastChangeToken: [CKRecordZone.ID : CKServerChangeToken])> {
         return Promise { seal in
             
             cloud_log("Fetch zone changes from private database.")
@@ -345,14 +345,14 @@ extension Cloud {
             guard !zoneIDs.isEmpty else { seal.fulfill(([], [], [:])); return }
             
             var recordsToSave = [CKRecord]()
-            var recordsToDelete = [CKRecordID]()
-            var lastChangeTokens = [CKRecordZoneID: CKServerChangeToken]()
+            var recordsToDelete = [CKRecord.ID]()
+            var lastChangeTokens = [CKRecordZone.ID: CKServerChangeToken]()
             
             let operation = CKFetchRecordZoneChangesOperation(
                 recordZoneIDs: zoneIDs,
-                optionsByRecordZoneID: zoneIDs.reduce(into: [CKRecordZoneID:CKFetchRecordZoneChangesOptions](), {
+                optionsByRecordZoneID: zoneIDs.reduce(into: [CKRecordZone.ID:CKFetchRecordZoneChangesOperation.ZoneOptions](), {
                     result, zoneID in
-                    let option = CKFetchRecordZoneChangesOptions()
+                    let option = CKFetchRecordZoneChangesOperation.ZoneOptions()
                     option.previousServerChangeToken = Defaults.zoneChangeToken(forZoneName: zoneID.zoneName)
                     result[zoneID] = option
                 }))
@@ -453,8 +453,8 @@ extension Cloud {
         }
     }
     
-    private func pushChanges(to database: Database, saving save: [CKRecord], deleting deletion: [CKRecordID])
-        -> Promise<(saved: [CKRecord]?, deleted: [CKRecordID]?)> {
+    private func pushChanges(to database: Database, saving save: [CKRecord], deleting deletion: [CKRecord.ID])
+        -> Promise<(saved: [CKRecord]?, deleted: [CKRecord.ID]?)> {
         return Promise { seal in
             let operation = CKModifyRecordsOperation(recordsToSave: save, recordIDsToDelete: deletion)
             operation.isLongLived = true
@@ -575,11 +575,11 @@ extension Cloud {
             }
         }
         
-        static func zoneChangeToken(forZoneID zoneID: CKRecordZoneID) -> CKServerChangeToken? {
+        static func zoneChangeToken(forZoneID zoneID: CKRecordZone.ID) -> CKServerChangeToken? {
             return zoneChangeToken(forZoneName: zoneID.zoneName)
         }
         
-        static func setZoneChangeToken(to token: CKServerChangeToken?, forZoneID zoneID: CKRecordZoneID) {
+        static func setZoneChangeToken(to token: CKServerChangeToken?, forZoneID zoneID: CKRecordZone.ID) {
             setZoneChangeToken(to: token, forZoneName: zoneID.zoneName)
         }
         

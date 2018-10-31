@@ -12,7 +12,7 @@ import PromiseKit
 import RealmSwift
 
 protocol ChangeManagerObserver: class {
-    func changeManagerDidObserveChanges(modification: [CKRecord], deletion: [CKRecordID])
+    func changeManagerDidObserveChanges(modification: [CKRecord], deletion: [CKRecord.ID])
 }
 
 class ChangeManager {
@@ -48,17 +48,17 @@ class ChangeManager {
         collectionObservations.forEach { $0.invalidate() }
     }
     
-    var allZoneIDs: [CKRecordZoneID] {
+    var allZoneIDs: [CKRecordZone.ID] {
         let realm = try! Realm()
         switch zoneType {
         case .individualForEachRecordType:
-            var result = [CKRecordZoneID]()
+            var result = [CKRecordZone.ID]()
             realm.enumerateCloudableTypes { type in
                 result.append(objectConverter.zoneID(for: type))
             }
             return result
         case .customRule(let rule):
-            var result = [CKRecordZoneID]()
+            var result = [CKRecordZone.ID]()
             realm.enumerateCloudableTypes { type in
                 result.append(rule(type))
             }
@@ -66,7 +66,7 @@ class ChangeManager {
         case .defaultZone:
             return [CKRecordZone.default().zoneID]
         case .sameZone(let name):
-            return [CKRecordZoneID(zoneName: name, ownerName: CKCurrentUserDefaultName)]
+            return [CKRecordZone.ID(zoneName: name, ownerName: CKCurrentUserDefaultName)]
         }
     }
 }
@@ -128,7 +128,7 @@ extension ChangeManager {
 // MARK: - Pull
 
 extension ChangeManager {
-    func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecordID]) {
+    func handleSyncronizationGet(modification: [CKRecord], deletion: [CKRecord.ID]) {
         let realm = Realm.cloudRealm
         let m: [Modification] = modification.map {
                 return Modification(syncedEntity: realm.syncedEntity(withIdentifier: $0.recordID.recordName),
@@ -149,12 +149,12 @@ extension ChangeManager {
 // MARK: - Push
 
 extension ChangeManager {
-    func generateAllUploads() -> (modification: [CKRecord], deletion: [CKRecordID]) {
+    func generateAllUploads() -> (modification: [CKRecord], deletion: [CKRecord.ID]) {
         return generateUploads(for: nil)
     }
     
     /// Update `SyncedEntity`s after upload finishes.
-    func finishUploads(saved: [CKRecord]?, deleted: [CKRecordID]?) {
+    func finishUploads(saved: [CKRecord]?, deleted: [CKRecord.ID]?) {
         let realm = Realm.cloudRealm
         let savedEntities: [SyncedEntity] = saved?
             .compactMap { record in
@@ -197,7 +197,7 @@ extension ChangeManager {
         }
     }
     
-    private func generateUploads(for type: CloudableObject.Type?) -> (modification: [CKRecord], deletion: [CKRecordID]) {
+    private func generateUploads(for type: CloudableObject.Type?) -> (modification: [CKRecord], deletion: [CKRecord.ID]) {
         let oRealm = try! Realm()
         let cRealm = Realm.cloudRealm
         
@@ -218,8 +218,8 @@ extension ChangeManager {
             return (object as? CloudableObject).map(converter.convert)
         }
         
-        let deletion: [CKRecordID] = uploadingDeletionSyncedEntities.map {
-            return CKRecordID(recordName: $0.identifier, zoneID: converter.zoneID(for: $0.objectType))
+        let deletion: [CKRecord.ID] = uploadingDeletionSyncedEntities.map {
+            return CKRecord.ID(recordName: $0.identifier, zoneID: converter.zoneID(for: $0.objectType))
         }
         
         return (modification, deletion)

@@ -21,24 +21,24 @@ class ObjectConverter {
         self.zoneType = zoneType
     }
     
-    func zoneID(for objectType: CloudableObject.Type) -> CKRecordZoneID {
+    func zoneID(for objectType: CloudableObject.Type) -> CKRecordZone.ID {
         switch zoneType {
         case .individualForEachRecordType:
-            return CKRecordZoneID(zoneName: objectType.recordType, ownerName: CKCurrentUserDefaultName)
+            return CKRecordZone.ID(zoneName: objectType.recordType, ownerName: CKCurrentUserDefaultName)
         case .customRule(let rule):
             return rule(objectType)
         case .defaultZone:
             return CKRecordZone.default().zoneID
         case .sameZone(let name):
-            return CKRecordZoneID(zoneName: name, ownerName: CKCurrentUserDefaultName)
+            return CKRecordZone.ID(zoneName: name, ownerName: CKCurrentUserDefaultName)
         }
     }
     
-    func recordID(for object: CloudableObject) -> CKRecordID {
+    func recordID(for object: CloudableObject) -> CKRecord.ID {
         let className = object.className
         let objClass = realmObjectType(forName: className)!
         let objectClass = objClass as! CloudableObject.Type
-        return CKRecordID(recordName: object.pkProperty, zoneID: zoneID(for: objectClass))
+        return CKRecord.ID(recordName: object.pkProperty, zoneID: zoneID(for: objectClass))
     }
     
     func convert(_ object: CloudableObject) -> CKRecord {
@@ -131,7 +131,7 @@ class ObjectConverter {
                 guard let _ = targetType as? CloudableObject.Type else { break }
                 if isArray {
                     guard let recordValue = recordValue else { break }
-                    let ids = (recordValue.list as! [CKReference]).map { $0.recordID.recordName }
+                    let ids = (recordValue.list as! [CKRecord.Reference]).map { $0.recordID.recordName }
                     let relationship: PendingRelationship = {
                         let p = PendingRelationship()
                         p.fromType = recordType
@@ -181,13 +181,13 @@ class ObjectConverter {
             if !isArray {
                 guard let object = value as? CloudableObject
                     else { return nil }
-                return CKReference(recordID: CKRecordID(recordName: object.pkProperty, zoneID: targetZoneID), action: .none)
+                return CKRecord.Reference(recordID: CKRecord.ID(recordName: object.pkProperty, zoneID: targetZoneID), action: .none)
             } else {
                 let list = object.dynamicList(property.name)
                 guard let targetPrimaryKey = targetType.primaryKey() else { return nil }
                 let all = list
                     .compactMap { $0.value(forKey: targetPrimaryKey) as? String }
-                    .map { CKReference(recordID: CKRecordID(recordName: $0, zoneID: targetZoneID), action: .none) }
+                    .map { CKRecord.Reference(recordID: CKRecord.ID(recordName: $0, zoneID: targetZoneID), action: .none) }
                 let ids = Array(all)
                 if ids.isEmpty { return nil }
                 return ids as NSArray
@@ -239,8 +239,8 @@ extension CKRecordValue {
         return Array(array)
     }
     
-    var reference: CKReference? {
-        return self as? CKReference
+    var reference: CKRecord.Reference? {
+        return self as? CKRecord.Reference
     }
 }
 

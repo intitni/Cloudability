@@ -3,7 +3,6 @@ import RealmSwift
 import Cloudability
 
 protocol TestableObject {
-    var description: String { get }
     var title: String { get }
 }
 
