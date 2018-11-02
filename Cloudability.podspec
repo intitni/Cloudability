@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Cloudability'
-  s.version          = '0.5.0'
+  s.version          = '0.5.1'
   s.summary          = 'Sync Realm with CloudKit'
 
 # This description is used to generate tags and improve search results.
@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
 
   s.source_files = 'Cloudability/Classes/**/*'
   
-  s.swift_version = '4.1'
+  s.swift_version = '4.2'
   
   # s.resource_bundles = {
   #   'Cloudability' => ['Cloudability/Assets/*.png']
