@@ -116,7 +116,7 @@ extension Cloud {
         changeManager?.observer = self
         changeManager?.setupSyncedEntitiesIfNeeded()
         subscribeToDatabaseChangesIfNeeded()
-        NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(cleanUp), name: UIApplication.willTerminateNotification, object: nil)
         forceSyncronize()
         // resumeLongLivedOperationsIfPossible()
     }

@@ -320,13 +320,13 @@ extension ChangeManager {
                 appliedRelationships.append(relationship)
                 toBeDeleted.append(relationship)
             } catch PendingRelationshipError.partiallyConnected {
-                cloud_log("Can not fullfill PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                cloud_log("Can not fullfill PendingRelationship \(String(describing: relationship.fromType)).\(String(describing: relationship.propertyName))")
                 try? cRealm.safeWrite {
                     relationship.attempts += 1
                 }
                 appliedRelationships.append(relationship)
             } catch PendingRelationshipError.dataCorrupted {
-                cloud_log("Data corrupted for PendingRelationship \(relationship.fromType).\(relationship.propertyName)")
+                cloud_log("Data corrupted for PendingRelationship \(String(describing: relationship.fromType)).\(String(describing: relationship.propertyName))")
                 try? cRealm.safeWrite {
                     relationship.isConsideredDead = true
                 }
