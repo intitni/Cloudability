@@ -9,7 +9,8 @@ import CloudKit
 import PromiseKit
 
 public class Container {
-    let ckContainer: CKContainer
+    public let ckContainer: CKContainer
+    
     let privateCloudDatabase: Database
     let publicCloudDatabase: Database
     let sharedCloudDatabase: Database
