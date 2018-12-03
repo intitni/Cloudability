@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'Cloudability'
-  s.version          = '0.5.1'
+  s.version          = '0.5.2'
   s.summary          = 'Sync Realm with CloudKit'
 
 # This description is used to generate tags and improve search results.
@@ -38,6 +38,6 @@ Pod::Spec.new do |s|
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'RealmSwift'
+  s.dependency 'RealmSwift', '~> 3.11.1'
   s.dependency 'PromiseKit/CloudKit', '~> 6.0'
 end
